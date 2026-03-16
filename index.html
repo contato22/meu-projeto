@@ -19,7 +19,8 @@
   }
   html, body {
     width: 100%; height: 100%;
-    background: #1a1a2e;
+    background: #050709;
+    min-height: 100vh;
     display: flex; align-items: center; justify-content: center;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
     overflow: hidden;
@@ -1094,18 +1095,6 @@
       type === 'pvu' ? 'Production vs Usage' : 'Battery';
   }
 
-  // ── Responsive: fill screen on small viewports ───────────────
-  function applyResponsive() {
-    var phone = document.getElementById('phone');
-    var vw = window.innerWidth, vh = window.innerHeight;
-    if (vw <= 420 || vh <= 870) {
-      phone.style.cssText = 'width:100vw;height:100dvh;border-radius:0;box-shadow:none;';
-    } else {
-      phone.style.cssText = 'width:390px;height:844px;border-radius:48px;';
-    }
-  }
-  applyResponsive();
-  window.addEventListener('resize', applyResponsive);
 </script>
 </body>
 </html>

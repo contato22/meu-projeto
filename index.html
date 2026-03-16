@@ -25,6 +25,8 @@
     display: flex; align-items: center; justify-content: center;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
     overflow: hidden;
+    /* Always show the phone centered — no fullscreen */
+    min-height: 100svh;
   }
 
   /* Phone wrapper — scales the shell to fit the viewport */
@@ -1109,27 +1111,19 @@
 </div><!-- /phone-wrap -->
 
 <script>
-  // ── Phone scale: compact preview on desktop, full on mobile ──
+  // ── Phone scale: always a phone frame, never fullscreen ──────
   function scalePhone() {
     var PHONE_W = 390, PHONE_H = 844;
-    var PAD_X = 80, PAD_Y = 48; // padding around the phone shell
+    var PAD_X = 60, PAD_Y = 40;
     var vw = window.innerWidth, vh = window.innerHeight;
-    var scale;
-    if (vw <= 430) {
-      // Real mobile: fill screen
-      scale = vw / PHONE_W;
-    } else {
-      // Desktop: fit inside viewport with breathing room
-      scale = Math.min(
-        (vw - PAD_X) / PHONE_W,
-        (vh - PAD_Y) / PHONE_H,
-        0.78   // cap — keeps it looking like a preview, not huge
-      );
-    }
+    // Always fit within viewport — phone is always visible as a frame
+    var scale = Math.min(
+      (vw - PAD_X) / PHONE_W,
+      (vh - PAD_Y) / PHONE_H,
+      0.78
+    );
     var wrap = document.getElementById('phone-wrap');
     wrap.style.transform = 'scale(' + scale + ')';
-    // Shrink body height to match scaled phone so no scrollbar appears
-    document.body.style.height = (PHONE_H * scale + PAD_Y) + 'px';
   }
   scalePhone();
   window.addEventListener('resize', scalePhone);

@@ -1,939 +1,1111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sunrun</title>
-  <style>
-    :root {
-      --bg-primary: #070911;
-      --bg-card: #0F1420;
-      --bg-card-2: #141C2E;
-      --color-primary: #C3DBFF;
-      --color-accent: #5B9BFF;
-      --color-text: #FFFCF5;
-      --color-muted: #8A9BB5;
-      --color-border: #1E2A42;
-      --color-green: #4ADE80;
-      --color-yellow: #FCD34D;
-      --color-orange: #F59E0B;
-      --color-red: #EF4444;
-      --radius-card: 16px;
-      --radius-btn: 12px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sunrun</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0C1020;
+    --card-bg: #131B2E;
+    --text: #FFFFFF;
+    --muted: #7A8FAA;
+    --green: #4ADE80;
+    --blue: #93C5FD;
+    --teal: #2DD4BF;
+    --border: rgba(255,255,255,0.08);
+    --border-card: rgba(255,255,255,0.09);
+  }
+  html, body {
+    width: 100%; height: 100%;
+    background: #1a1a2e;
+    display: flex; align-items: center; justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    overflow: hidden;
+  }
+  /* Phone shell */
+  #phone {
+    width: 390px; height: 844px;
+    background: var(--bg);
+    border-radius: 48px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 10px #1C1C1E, 0 0 0 12px #3A3A3C, 0 30px 80px rgba(0,0,0,0.7);
+    display: flex; flex-direction: column;
+  }
+  /* Notch */
+  #notch {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 126px; height: 34px;
+    background: #1C1C1E;
+    border-radius: 0 0 20px 20px;
+    z-index: 100;
+  }
+  /* Status bar */
+  #statusbar {
+    height: 50px; min-height: 50px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 0 24px 6px;
+    position: relative; z-index: 99;
+    flex-shrink: 0;
+  }
+  #statusbar .time { font-size: 15px; font-weight: 600; color: #fff; }
+  #statusbar .icons { display: flex; align-items: center; gap: 6px; }
+  #statusbar .icons svg { fill: #fff; }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  /* Screen container */
+  #screens { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+  .screen {
+    position: absolute; inset: 0;
+    display: none; flex-direction: column;
+    overflow-y: auto; overflow-x: hidden;
+    background: var(--bg);
+    padding-bottom: 10px;
+  }
+  .screen.active { display: flex; }
+  .screen::-webkit-scrollbar { display: none; }
+  .screen { -ms-overflow-style: none; scrollbar-width: none; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, sans-serif;
-      background: #050709;
-      color: var(--color-text);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+  /* Bottom Nav */
+  #bottomnav {
+    height: 85px; min-height: 85px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    display: flex; align-items: flex-start; justify-content: space-around;
+    padding-top: 10px;
+    position: relative; z-index: 99;
+    flex-shrink: 0;
+  }
+  .nav-tab {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer; opacity: 0.35; transition: opacity 0.2s;
+    min-width: 56px;
+  }
+  .nav-tab.active { opacity: 1; }
+  .nav-tab svg { width: 24px; height: 24px; }
+  .nav-tab > span { font-size: 10px; color: #fff; font-weight: 500; }
+  .nav-badge {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .badge {
+    position: absolute; top: -4px; right: -8px;
+    background: #EF4444; color: #fff;
+    font-size: 9px; font-weight: 700;
+    border-radius: 10px; padding: 1px 4px;
+    min-width: 16px; text-align: center;
+    line-height: 14px; height: 14px;
+  }
 
-    /* ── Phone shell ── */
-    .phone {
-      width: 390px;
-      height: 844px;
-      background: var(--bg-primary);
-      position: relative;
-      overflow: hidden;
-      border-radius: 48px;
-      box-shadow:
-        0 0 0 1px #2A3550,
-        0 0 0 12px #101828,
-        0 0 0 13px #2A3550,
-        0 30px 80px rgba(0,0,0,.9);
-    }
+  /* ===== OVERVIEW ===== */
+  .greeting {
+    padding: 16px 20px 8px;
+    font-size: 27px; font-weight: 700; color: #fff;
+    letter-spacing: -0.3px;
+    flex-shrink: 0;
+  }
+  .status-card {
+    margin: 0 16px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #1E3260 0%, #0F1C38 100%);
+    border: 1px solid var(--border-card);
+    padding: 14px 16px 14px;
+    position: relative; overflow: hidden;
+    flex-shrink: 0;
+  }
+  .status-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .status-header .label { font-size: 17px; font-weight: 700; color: #fff; }
+  .status-header .status-ok { font-size: 15px; font-weight: 600; color: var(--green); }
+  .status-subrow {
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: var(--muted); line-height: 1.6;
+    margin-bottom: 10px;
+  }
+  .status-subrow .right { text-align: right; }
+  .house-wrap {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    margin: 4px 0 8px; height: 155px;
+  }
+  .house-svg { width: 220px; height: 155px; }
+  .kw-labels { position: absolute; inset: 0; pointer-events: none; }
+  .kw-label { position: absolute; }
+  .kw-label.tl { top: 0; left: 0; }
+  .kw-label.tr { top: 0; right: 0; text-align: right; }
+  .kw-label.bl { bottom: 0; left: 0; }
+  .kw-label.br { bottom: 0; right: 0; text-align: right; }
+  .kw-val { font-size: 14px; font-weight: 700; color: #fff; display: block; line-height: 1.2; }
+  .kw-desc { font-size: 11px; color: var(--muted); display: block; line-height: 1.2; }
+  .status-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 10px; margin-top: 4px;
+  }
+  .status-footer-left .total { font-size: 19px; font-weight: 700; color: #fff; }
+  .status-footer-left .sub { font-size: 12px; color: var(--muted); }
+  .help-btn {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .autopay-banner {
+    margin: 10px 16px 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border-card);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .autopay-banner .text { font-size: 14px; color: #fff; font-weight: 500; }
+  .pill-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff; font-size: 13px; font-weight: 600;
+    border-radius: 20px; padding: 6px 14px;
+    cursor: pointer; white-space: nowrap; font-family: inherit;
+  }
+  .dots {
+    display: flex; justify-content: center; gap: 6px;
+    margin: 10px 0 8px; flex-shrink: 0;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.25); transition: all 0.2s; }
+  .dot.active { background: #fff; width: 18px; border-radius: 3px; }
+  .mini-cards {
+    display: flex; gap: 10px; margin: 0 16px;
+    flex-shrink: 0;
+  }
+  .mini-card {
+    flex: 1; background: var(--card-bg);
+    border: 1px solid var(--border-card);
+    border-radius: 16px; padding: 12px 12px 10px;
+  }
+  .mini-card-header {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+  }
+  .green-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .mini-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .bar-chart-mini {
+    display: flex; align-items: flex-end; gap: 3px; height: 32px;
+  }
+  .bar-mini {
+    flex: 1; border-radius: 2px 2px 0 0;
+    background: var(--green);
+  }
+  .pct-big { font-size: 28px; font-weight: 700; color: #fff; line-height: 1; margin-bottom: 2px; letter-spacing: -0.5px; }
+  .pct-label { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+  .progress-bar {
+    width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-bottom: 3px;
+  }
+  .progress-fill { height: 100%; border-radius: 2px; background: var(--green); }
+  .progress-fill.blue { background: var(--blue); }
 
-    /* ── Screen management ── */
-    .screen {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .25s ease;
-    }
-    .screen.active { opacity: 1; pointer-events: all; }
+  /* ===== CHARTS SCREEN ===== */
+  .screen-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px 10px; flex-shrink: 0;
+  }
+  .back-btn {
+    font-size: 22px; color: #fff; cursor: pointer;
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.08); border-radius: 50%;
+    line-height: 1;
+  }
+  .screen-title { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  .spacer { width: 32px; }
+  .sub-nav {
+    display: flex; padding: 0 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 0; margin-bottom: 12px; flex-shrink: 0;
+  }
+  .sub-tab {
+    font-size: 14px; font-weight: 600; color: var(--muted);
+    padding: 8px 14px 10px; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .sub-tab.active { color: #fff; border-bottom-color: #fff; }
+  .period-tabs {
+    display: flex; background: rgba(255,255,255,0.07);
+    border-radius: 20px; margin: 0 16px 12px;
+    padding: 3px; flex-shrink: 0;
+  }
+  .period-tab {
+    flex: 1; text-align: center;
+    font-size: 13px; font-weight: 600;
+    color: rgba(255,255,255,0.45);
+    padding: 7px 0; border-radius: 17px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .period-tab.sel { background: #fff; color: var(--bg); font-weight: 700; }
+  .date-nav {
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    margin-bottom: 10px; flex-shrink: 0;
+  }
+  .date-nav .arrow { font-size: 16px; color: var(--muted); cursor: pointer; padding: 4px 8px; }
+  .date-nav .date { font-size: 14px; color: #fff; font-weight: 500; }
+  .net-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; margin-bottom: 10px; flex-shrink: 0;
+  }
+  .net-row .net-label { font-size: 14px; color: var(--muted); }
+  .net-row .net-val { font-size: 14px; font-weight: 700; color: #fff; }
+  .chart-container { margin: 0 10px; position: relative; flex-shrink: 0; }
+  .chart-svg { width: 100%; display: block; }
+  .legend {
+    display: flex; gap: 16px; padding: 10px 16px;
+    align-items: center; flex-shrink: 0;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .legend-box { width: 12px; height: 12px; border-radius: 2px; }
+  .details-btn {
+    margin: 8px 16px 0;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    text-align: center;
+    font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer;
+    flex-shrink: 0;
+  }
+  .chart-screen-content { display: none; flex-direction: column; }
+  .chart-screen-content.active { display: flex; }
 
-    /* ── Status bar ── */
-    .status-bar {
-      height: 48px;
-      padding: 16px 28px 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-shrink: 0;
-    }
-    .status-time { font-size: 15px; font-weight: 600; }
-    .status-icons { display: flex; gap: 6px; align-items: center; }
+  /* ===== INBOX SCREEN ===== */
+  .inbox-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px 4px; flex-shrink: 0;
+  }
+  .inbox-title { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  .gear-btn { color: var(--muted); cursor: pointer; }
+  .inbox-subtitle { padding: 2px 20px 10px; font-size: 14px; color: var(--muted); flex-shrink: 0; }
+  .msg-list { padding: 0 16px; flex-shrink: 0; }
+  .msg-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .msg-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .msg-avatar.blue-av { background: #2563EB; }
+  .msg-avatar.purple-av { background: #7C3AED; }
+  .msg-avatar.sunrun-av { background: linear-gradient(135deg, #F97316 0%, #EAB308 100%); }
+  .msg-body { flex: 1; min-width: 0; }
+  .msg-top {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 3px;
+  }
+  .msg-name { font-size: 14px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 185px; }
+  .msg-time { font-size: 12px; color: var(--muted); flex-shrink: 0; margin-left: 8px; white-space: nowrap; }
+  .msg-preview { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-now-wrap { padding: 14px 16px 6px; flex-shrink: 0; }
+  .chat-now-btn {
+    width: 100%; padding: 13px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 24px;
+    color: #fff; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
 
-    /* ── Scroll area ── */
-    .scroll { flex: 1; overflow-y: auto; padding: 0 20px 96px; scrollbar-width: none; }
-    .scroll::-webkit-scrollbar { display: none; }
+  /* ===== OFFERS SCREEN ===== */
+  .offers-header { padding: 16px 20px 8px; flex-shrink: 0; }
+  .offers-title { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  .offers-sub { font-size: 14px; color: var(--muted); margin-top: 2px; }
+  .offer-card {
+    margin: 10px 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-card);
+    border-radius: 18px;
+    overflow: hidden; flex-shrink: 0;
+  }
+  .offer-img {
+    width: 100%; height: 110px;
+    background: linear-gradient(135deg, #1E3260, #0F1C38);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 42px;
+  }
+  .offer-body { padding: 14px; }
+  .offer-tag { font-size: 11px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px; }
+  .offer-name { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 5px; }
+  .offer-desc { font-size: 13px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+  .offer-btn {
+    background: var(--green); color: #0C1020;
+    font-size: 14px; font-weight: 700;
+    border: none; border-radius: 20px; padding: 9px 20px;
+    cursor: pointer; font-family: inherit;
+  }
 
-    /* ── Bottom nav ── */
-    .bottom-nav {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      height: 86px;
-      background: rgba(7,9,17,.96);
-      backdrop-filter: blur(24px);
-      border-top: 1px solid var(--color-border);
-      display: flex;
-      justify-content: space-around;
-      align-items: flex-start;
-      padding-top: 14px;
-      border-radius: 0 0 48px 48px;
-    }
-    .nav-btn {
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      cursor: pointer; opacity: .45; transition: opacity .2s;
-      min-width: 68px; border: none; background: none; color: inherit;
-    }
-    .nav-btn.active { opacity: 1; }
-    .nav-btn svg { transition: stroke .2s; }
-    .nav-btn.active svg { stroke: var(--color-accent); }
-    .nav-label { font-size: 10px; font-weight: 500; color: var(--color-muted); }
-    .nav-btn.active .nav-label { color: var(--color-accent); }
+  /* ===== ACCOUNT SCREEN ===== */
+  .account-header { padding: 16px 20px 8px; flex-shrink: 0; }
+  .account-title { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  .account-avatar-row {
+    display: flex; align-items: center; gap: 14px;
+    margin: 8px 16px 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-card);
+    border-radius: 16px;
+    padding: 14px; flex-shrink: 0;
+  }
+  .account-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, #2563EB, #7C3AED);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .account-name { font-size: 17px; font-weight: 700; color: #fff; }
+  .account-email { font-size: 13px; color: var(--muted); }
+  .settings-section { margin: 0 16px 14px; flex-shrink: 0; }
+  .settings-section-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; padding-left: 4px; }
+  .settings-list { background: var(--card-bg); border: 1px solid var(--border-card); border-radius: 16px; overflow: hidden; }
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row-left { display: flex; align-items: center; gap: 12px; }
+  .settings-icon { font-size: 18px; }
+  .settings-row-label { font-size: 15px; color: #fff; }
+  .settings-row-right { font-size: 14px; color: var(--muted); }
+  .chev { color: var(--muted); font-size: 18px; line-height: 1; }
+  .signout-wrap { padding: 0 16px 20px; flex-shrink: 0; }
+  .signout-btn {
+    width: 100%; padding: 13px;
+    background: transparent;
+    border: 1px solid rgba(239,68,68,0.4);
+    border-radius: 24px;
+    color: #EF4444; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
 
-    /* ── Reusable components ── */
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-card);
-      padding: 20px;
-      margin-bottom: 14px;
-    }
-    .card-label {
-      font-size: 11px; font-weight: 600; letter-spacing: .7px;
-      text-transform: uppercase; color: var(--color-muted); margin-bottom: 14px;
-    }
-    .section-row {
-      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
-    }
-    .section-title { font-size: 16px; font-weight: 600; }
-    .section-link { font-size: 13px; color: var(--color-accent); cursor: pointer; }
-
-    .page-header {
-      padding: 14px 0 10px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .header-sup { font-size: 13px; color: var(--color-muted); margin-bottom: 2px; }
-    .header-title { font-size: 22px; font-weight: 700; }
-
-    .icon-btn {
-      width: 40px; height: 40px;
-      background: var(--bg-card); border: 1px solid var(--color-border);
-      border-radius: 12px; display: flex; align-items: center; justify-content: center;
-      cursor: pointer; position: relative;
-    }
-    .badge::after {
-      content: ''; position: absolute; top: -2px; right: -2px;
-      width: 8px; height: 8px; background: var(--color-red);
-      border-radius: 50%; border: 2px solid var(--bg-primary);
-    }
-
-    .divider { height: 1px; background: var(--color-border); margin: 0 -20px; }
-
-    /* ─────────────────────────────── LOGIN ─── */
-    #screen-login {
-      background: radial-gradient(ellipse at 50% 10%, #0D1829 0%, #070911 65%);
-      justify-content: center; align-items: center; padding: 40px 32px 60px;
-      gap: 0;
-    }
-    .login-brand { text-align: center; margin-bottom: 52px; }
-    .login-sun { width: 76px; height: 76px; margin: 0 auto 18px; }
-    .login-wordmark { font-size: 34px; font-weight: 700; letter-spacing: -.5px; }
-    .login-wordmark b { color: var(--color-accent); font-weight: 700; }
-    .login-tagline { font-size: 13px; color: var(--color-muted); margin-top: 4px; }
-
-    .input-lbl {
-      font-size: 11px; font-weight: 600; letter-spacing: .5px;
-      text-transform: uppercase; color: var(--color-muted);
-      display: block; margin-bottom: 8px;
-    }
-    .input-field {
-      width: 100%; background: var(--bg-card);
-      border: 1px solid var(--color-border); border-radius: var(--radius-btn);
-      padding: 15px 16px; color: var(--color-text); font-size: 15px;
-      outline: none; transition: border-color .2s; margin-bottom: 14px;
-    }
-    .input-field:focus { border-color: var(--color-accent); }
-    .input-field::placeholder { color: #2E3D56; }
-
-    .btn-primary {
-      width: 100%; background: var(--color-accent); color: #fff;
-      font-size: 16px; font-weight: 600; border: none;
-      border-radius: var(--radius-btn); padding: 17px;
-      cursor: pointer; margin-top: 4px; transition: opacity .2s, transform .1s;
-    }
-    .btn-primary:active { opacity: .82; transform: scale(.98); }
-
-    .login-footer {
-      text-align: center; margin-top: 22px;
-      font-size: 14px; color: var(--color-muted);
-    }
-    .login-footer a { color: var(--color-accent); text-decoration: none; }
-    .login-footer span { margin: 0 10px; color: #2E3D56; }
-
-    /* ─────────────────────────────── HOME ─── */
-    .weather-pill {
-      display: inline-flex; align-items: center; gap: 7px;
-      background: var(--bg-card); border: 1px solid var(--color-border);
-      border-radius: 20px; padding: 6px 12px; font-size: 12px;
-      color: var(--color-muted); margin-bottom: 18px;
-    }
-    .weather-pill strong { color: var(--color-text); }
-
-    /* Power flow card */
-    .flow-card {
-      background: linear-gradient(145deg, #0C1828 0%, #0F1F3A 100%);
-      border: 1px solid #1A2E4A; border-radius: var(--radius-card);
-      padding: 24px 20px; margin-bottom: 14px;
-    }
-    .flow-status { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
-    .pulse-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--color-green); box-shadow: 0 0 8px var(--color-green);
-      animation: pulse 2s ease-in-out infinite;
-    }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-    .flow-status-text { font-size: 13px; color: var(--color-green); font-weight: 500; }
-
-    .power-hero { text-align: center; margin-bottom: 26px; }
-    .power-num {
-      font-size: 56px; font-weight: 700; letter-spacing: -3px; line-height: 1;
-      background: linear-gradient(145deg, #FFFCF5 30%, #C3DBFF);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    }
-    .power-unit { font-size: 16px; color: var(--color-muted); margin-top: 6px; }
-
-    /* flow nodes */
-    .flow-nodes { display: flex; align-items: center; justify-content: space-between; }
-    .flow-node { display: flex; flex-direction: column; align-items: center; gap: 7px; }
-    .flow-icon {
-      width: 54px; height: 54px; border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .fi-solar { background: rgba(252,211,77,.12); border: 1px solid rgba(252,211,77,.28); }
-    .fi-home  { background: rgba(91,155,255,.12); border: 1px solid rgba(91,155,255,.28); }
-    .fi-batt  { background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.28); }
-    .fi-grid  { background: rgba(138,155,181,.12); border: 1px solid rgba(138,155,181,.24); }
-    .flow-lbl { font-size: 11px; color: var(--color-muted); font-weight: 500; }
-    .flow-val { font-size: 13px; font-weight: 600; }
-
-    /* animated arrow */
-    .flow-connector {
-      flex: 1; display: flex; align-items: center; margin: 0 2px; margin-top: -18px;
-    }
-    .flow-track {
-      flex: 1; height: 2px; position: relative;
-      background: linear-gradient(90deg, rgba(91,155,255,.5), rgba(91,155,255,.05));
-      overflow: hidden;
-    }
-    .flow-track::after {
-      content: ''; position: absolute; top: -2px;
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--color-accent);
-      animation: slide 1.6s linear infinite;
-    }
-    @keyframes slide { 0%{left:-6px;opacity:0} 15%{opacity:1} 85%{opacity:1} 100%{left:100%;opacity:0} }
-    .flow-arrow-head { color: var(--color-accent); margin-left: -1px; flex-shrink: 0; }
-
-    /* quick stats */
-    .stats-grid {
-      display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px;
-    }
-    .stat-card {
-      background: var(--bg-card); border: 1px solid var(--color-border);
-      border-radius: 14px; padding: 14px 10px; text-align: center;
-    }
-    .stat-emoji { font-size: 20px; margin-bottom: 6px; }
-    .stat-val { font-size: 17px; font-weight: 700; margin-bottom: 2px; }
-    .stat-lbl { font-size: 10px; color: var(--color-muted); font-weight: 500; }
-
-    /* savings */
-    .savings-card {
-      background: linear-gradient(145deg, #091A28 0%, #0C2038 100%);
-      border: 1px solid #163350;
-    }
-    .savings-amount { font-size: 38px; font-weight: 700; color: var(--color-green); margin-bottom: 3px; }
-    .savings-sub { font-size: 13px; color: var(--color-muted); margin-bottom: 18px; }
-    .prog-bar { height: 6px; background: rgba(74,222,128,.15); border-radius: 3px; overflow: hidden; }
-    .prog-fill { height: 100%; width: 72%; background: linear-gradient(90deg,#4ADE80,#22C55E); border-radius: 3px; }
-    .prog-row { display: flex; justify-content: space-between; margin-top: 7px; }
-    .prog-lbl { font-size: 11px; color: var(--color-muted); }
-
-    /* activity list */
-    .act-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 13px 0; border-bottom: 1px solid var(--color-border);
-    }
-    .act-item:last-child { border-bottom: none; }
-    .act-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .act-text { flex: 1; font-size: 13px; color: var(--color-muted); line-height: 1.4; }
-    .act-text strong { color: var(--color-text); font-weight: 500; }
-    .act-time { font-size: 11px; color: var(--color-muted); }
-
-    /* bill card */
-    .bill-card {
-      background: linear-gradient(145deg, #091929 0%, #0C1F3A 100%);
-      border: 1px solid #163350; border-radius: var(--radius-card); padding: 20px;
-      margin-bottom: 14px;
-    }
-    .bill-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
-    .bill-amount { font-size: 34px; font-weight: 700; color: var(--color-accent); }
-    .bill-due { font-size: 12px; color: var(--color-muted); margin-top: 4px; }
-    .pill {
-      border-radius: 20px; padding: 4px 10px;
-      font-size: 12px; font-weight: 600;
-    }
-    .pill-green { background: rgba(74,222,128,.15); color: var(--color-green); border: 1px solid rgba(74,222,128,.28); }
-    .pill-blue  { background: rgba(91,155,255,.15); color: var(--color-accent); border: 1px solid rgba(91,155,255,.28); }
-    .btn-outline {
-      width: 100%; border: 1px solid var(--color-accent); background: transparent;
-      color: var(--color-accent); font-size: 15px; font-weight: 600;
-      border-radius: var(--radius-btn); padding: 13px; cursor: pointer;
-      transition: background .2s;
-    }
-    .btn-outline:hover { background: rgba(91,155,255,.08); }
-
-    /* ─────────────────────────────── ENERGY ─── */
-    .period-tabs {
-      display: flex; background: var(--bg-card);
-      border: 1px solid var(--color-border); border-radius: 12px;
-      padding: 4px; margin-bottom: 18px;
-    }
-    .period-tab {
-      flex: 1; text-align: center; padding: 8px 4px;
-      font-size: 13px; font-weight: 500; color: var(--color-muted);
-      border-radius: 9px; cursor: pointer; transition: all .2s;
-    }
-    .period-tab.active { background: var(--color-accent); color: #fff; font-weight: 600; }
-
-    .chart-box {
-      background: var(--bg-card); border: 1px solid var(--color-border);
-      border-radius: var(--radius-card); padding: 20px; margin-bottom: 14px;
-    }
-    .chart-top { display: flex; justify-content: space-between; margin-bottom: 18px; }
-    .chart-total { font-size: 28px; font-weight: 700; }
-    .chart-sub { font-size: 12px; color: var(--color-muted); margin-top: 2px; }
-    .chart-delta { font-size: 18px; font-weight: 700; color: var(--color-green); }
-
-    .legend-row { display: flex; gap: 18px; margin-top: 12px; }
-    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-muted); }
-    .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
-
-    .bd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-    .bd-card {
-      background: var(--bg-card); border: 1px solid var(--color-border);
-      border-radius: 14px; padding: 15px;
-    }
-    .bd-icon {
-      width: 34px; height: 34px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center; margin-bottom: 10px;
-    }
-    .bd-val { font-size: 19px; font-weight: 700; margin-bottom: 2px; }
-    .bd-lbl { font-size: 11px; color: var(--color-muted); }
-
-    /* ─────────────────────────────── BENEFITS ─── */
-    .impact-hero {
-      text-align: center; padding: 18px 0 24px;
-    }
-    .impact-hero-title { font-size: 24px; font-weight: 700; margin-bottom: 5px; }
-    .impact-hero-sub { font-size: 14px; color: var(--color-muted); }
-
-    .total-savings-card {
-      background: linear-gradient(145deg, #091A0F 0%, #0C2816 100%);
-      border: 1px solid #183D22; border-radius: var(--radius-card);
-      padding: 28px 20px; text-align: center; margin-bottom: 14px;
-    }
-    .total-label { font-size: 11px; font-weight: 600; color: var(--color-green); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 8px; }
-    .total-amount { font-size: 52px; font-weight: 700; color: var(--color-green); letter-spacing: -2px; }
-    .total-note { font-size: 13px; color: var(--color-muted); margin-top: 8px; }
-    .total-note strong { color: var(--color-text); }
-
-    .impact-card {
-      display: flex; align-items: center; gap: 16px;
-      background: var(--bg-card); border: 1px solid var(--color-border);
-      border-radius: var(--radius-card); padding: 20px; margin-bottom: 10px;
-    }
-    .impact-emoji-bg {
-      width: 54px; height: 54px; border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 26px; flex-shrink: 0;
-    }
-    .impact-val { font-size: 22px; font-weight: 700; margin-bottom: 2px; }
-    .impact-lbl { font-size: 13px; color: var(--color-muted); }
-
-    .hist-row {
-      display: flex; align-items: center; padding: 14px 0;
-      border-bottom: 1px solid var(--color-border);
-    }
-    .hist-row:last-child { border-bottom: none; }
-    .hist-month { flex: 1; font-size: 14px; font-weight: 500; }
-    .hist-kwh { font-size: 13px; color: var(--color-muted); margin-right: 16px; }
-    .hist-amount { font-size: 15px; font-weight: 600; color: var(--color-green); }
-
-    /* ─────────────────────────────── ACCOUNT ─── */
-    .acct-header { text-align: center; padding: 20px 0 26px; }
-    .acct-avatar {
-      width: 80px; height: 80px;
-      background: linear-gradient(135deg, #4A8FFF, #C3DBFF);
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      font-size: 30px; font-weight: 700; color: #070911; margin: 0 auto 12px;
-    }
-    .acct-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-    .acct-email { font-size: 13px; color: var(--color-muted); }
-
-    .menu-section { margin-bottom: 22px; }
-    .menu-section-lbl {
-      font-size: 11px; font-weight: 600; color: var(--color-muted);
-      text-transform: uppercase; letter-spacing: .7px; margin-bottom: 8px; padding-left: 4px;
-    }
-    .menu-item {
-      display: flex; align-items: center; padding: 15px;
-      background: var(--bg-card); border: 1px solid var(--color-border);
-      border-radius: 12px; margin-bottom: 7px; cursor: pointer;
-      transition: background .15s;
-    }
-    .menu-item:active { background: var(--bg-card-2); }
-    .menu-icon {
-      width: 36px; height: 36px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center; margin-right: 13px; flex-shrink: 0;
-    }
-    .menu-text { flex: 1; }
-    .menu-title { font-size: 15px; font-weight: 500; margin-bottom: 1px; }
-    .menu-sub { font-size: 12px; color: var(--color-muted); }
-
-    /* ─────────────────────────────── RESPONSIVE ─── */
-    @media (max-width: 430px) {
-      body { align-items: flex-start; background: var(--bg-primary); }
-      .phone { width: 100%; height: 100dvh; border-radius: 0; box-shadow: none; }
-    }
-  </style>
+  /* Sun icon SVG for sunrun avatar */
+  .sun-svg { width: 24px; height: 24px; }
+</style>
 </head>
 <body>
-<div class="phone">
+<div id="phone">
+  <!-- Notch -->
+  <div id="notch"></div>
 
-  <!-- ═══════════════════════ LOGIN ═══════════════════════ -->
-  <div class="screen active" id="screen-login">
-    <div class="login-brand">
-      <div class="login-sun">
-        <svg viewBox="0 0 76 76" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="38" cy="38" r="17" fill="#C3DBFF"/>
-          <circle cx="38" cy="38" r="11" fill="#5B9BFF"/>
-          <!-- rays -->
-          <line x1="38" y1="4"  x2="38" y2="14"  stroke="#5B9BFF" stroke-width="3.5" stroke-linecap="round"/>
-          <line x1="38" y1="62" x2="38" y2="72"  stroke="#5B9BFF" stroke-width="3.5" stroke-linecap="round"/>
-          <line x1="4"  y1="38" x2="14" y2="38"  stroke="#5B9BFF" stroke-width="3.5" stroke-linecap="round"/>
-          <line x1="62" y1="38" x2="72" y2="38"  stroke="#5B9BFF" stroke-width="3.5" stroke-linecap="round"/>
-          <line x1="14.6" y1="14.6" x2="21.7" y2="21.7" stroke="#5B9BFF" stroke-width="3.5" stroke-linecap="round"/>
-          <line x1="54.3" y1="54.3" x2="61.4" y2="61.4" stroke="#5B9BFF" stroke-width="3.5" stroke-linecap="round"/>
-          <line x1="61.4" y1="14.6" x2="54.3" y2="21.7" stroke="#5B9BFF" stroke-width="3.5" stroke-linecap="round"/>
-          <line x1="21.7" y1="54.3" x2="14.6" y2="61.4" stroke="#5B9BFF" stroke-width="3.5" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="login-wordmark"><b>sun</b>run</div>
-      <div class="login-tagline">Your solar energy hub</div>
-    </div>
-
-    <div>
-      <label class="input-lbl">Email address</label>
-      <input class="input-field" type="email" placeholder="you@example.com">
-      <label class="input-lbl">Password</label>
-      <input class="input-field" type="password" placeholder="••••••••">
-      <button class="btn-primary" onclick="goTo('home')">Sign In</button>
-      <div class="login-footer">
-        <a href="#">Forgot password?</a>
-        <span>|</span>
-        <a href="#">Create account</a>
-      </div>
+  <!-- Status Bar -->
+  <div id="statusbar">
+    <span class="time" id="clock">9:41</span>
+    <div class="icons">
+      <!-- Signal bars -->
+      <svg width="17" height="12" viewBox="0 0 17 12" fill="white">
+        <rect x="0" y="5" width="3" height="7" rx="0.8" opacity="0.4"/>
+        <rect x="4.5" y="3.5" width="3" height="8.5" rx="0.8" opacity="0.6"/>
+        <rect x="9" y="1.5" width="3" height="10.5" rx="0.8" opacity="0.8"/>
+        <rect x="13.5" y="0" width="3" height="12" rx="0.8"/>
+      </svg>
+      <!-- WiFi -->
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="white">
+        <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/>
+        <path d="M3.5 6.5C4.9 5.1 6.4 4.4 8 4.4s3.1.7 4.5 2.1" stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.75"/>
+        <path d="M1 4C3 2 5.4 1 8 1s5 1 7 3" stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.5"/>
+      </svg>
+      <!-- Battery -->
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
+        <rect x="0.5" y="1" width="21" height="10" rx="2" stroke="white" stroke-width="1.2" opacity="0.7"/>
+        <rect x="22.5" y="4" width="2" height="4" rx="1" fill="white" opacity="0.7"/>
+        <rect x="2" y="2.5" width="17" height="7" rx="1" fill="white"/>
+      </svg>
     </div>
   </div>
 
-  <!-- ═══════════════════════ HOME ═══════════════════════ -->
-  <div class="screen" id="screen-home">
-    <div class="status-bar">
-      <span class="status-time" id="time-home">9:41</span>
-      <div class="status-icons"><!-- signal, wifi, battery SVGs -->
-        <svg width="17" height="12" viewBox="0 0 17 12" fill="white"><rect x="0" y="4" width="3" height="8" rx="1" opacity=".35"/><rect x="4.5" y="2.5" width="3" height="9.5" rx="1" opacity=".6"/><rect x="9" y="1" width="3" height="11" rx="1" opacity=".85"/><rect x="13.5" y="0" width="3.5" height="12" rx="1"/></svg>
-        <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><path d="M8 3C10.8 3 13.3 4.4 14.7 6.6L16 5.2C14.2 2.6 11.3 1 8 1S1.8 2.6 0 5.2L1.3 6.6C2.7 4.4 5.2 3 8 3Z" opacity=".4"/><path d="M8 6c1.8 0 3.4.9 4.4 2.3l1.4-1.4A7 7 0 008 4 7 7 0 002.2 6.9l1.4 1.4A5 5 0 018 6Z" opacity=".75"/><circle cx="8" cy="10" r="2"/></svg>
-        <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="white" stroke-opacity=".35"/><rect x="2" y="2" width="17" height="8" rx="2" fill="white"/><path d="M23 4v4a2 2 0 000-4z" fill="white" opacity=".4"/></svg>
+  <!-- Screens -->
+  <div id="screens">
+
+    <!-- ======== OVERVIEW ======== -->
+    <div class="screen active" id="s-overview">
+      <div class="greeting">Good morning, Carmen</div>
+
+      <!-- Status Card -->
+      <div class="status-card">
+        <div class="status-header">
+          <span class="label">Status</span>
+          <span class="status-ok">System normal</span>
+        </div>
+        <div class="status-subrow">
+          <div>Panels<br>Battery</div>
+          <div class="right">Generating<br>🔋 80% charged</div>
+        </div>
+
+        <!-- House with corner labels -->
+        <div class="house-wrap">
+          <!-- House SVG -->
+          <svg class="house-svg" viewBox="0 0 220 155" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#D4C4A0"/>
+                <stop offset="100%" stop-color="#C2B28E"/>
+              </linearGradient>
+              <linearGradient id="roofGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1A2744"/>
+                <stop offset="100%" stop-color="#0F1828"/>
+              </linearGradient>
+              <linearGradient id="solarGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#1565C0"/>
+                <stop offset="50%" stop-color="#1E88E5"/>
+                <stop offset="100%" stop-color="#0D47A1"/>
+              </linearGradient>
+              <linearGradient id="glowGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#FFE082" stop-opacity="0.12"/>
+                <stop offset="100%" stop-color="#FFE082" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Ground shadow -->
+            <ellipse cx="110" cy="134" rx="78" ry="5" fill="rgba(0,0,0,0.25)"/>
+
+            <!-- Garage (left) wall -->
+            <rect x="24" y="84" width="52" height="48" fill="url(#wallGrad)"/>
+            <!-- Garage roof -->
+            <polygon points="18,84 50,56 82,84" fill="url(#roofGrad)"/>
+            <!-- Garage roof edge trim -->
+            <line x1="18" y1="84" x2="82" y2="84" stroke="#0E1520" stroke-width="1.5"/>
+
+            <!-- Main house body -->
+            <rect x="62" y="74" width="98" height="58" fill="url(#wallGrad)"/>
+            <!-- Main roof -->
+            <polygon points="52,74 111,30 170,74" fill="url(#roofGrad)"/>
+            <!-- Main roof edge -->
+            <line x1="52" y1="74" x2="170" y2="74" stroke="#0E1520" stroke-width="1.5"/>
+
+            <!-- Right wing -->
+            <rect x="148" y="90" width="38" height="42" fill="#C8B898"/>
+            <!-- Right wing roof -->
+            <polygon points="142,90 167,70 192,90" fill="#172038"/>
+            <line x1="142" y1="90" x2="192" y2="90" stroke="#0E1520" stroke-width="1.2"/>
+
+            <!-- Chimney -->
+            <rect x="126" y="27" width="13" height="24" fill="#172038"/>
+            <rect x="123" y="25" width="19" height="5" rx="1.5" fill="#1A2744"/>
+
+            <!-- Solar panels on main roof -->
+            <g>
+              <!-- Row 1 -->
+              <rect x="70" y="46" width="13" height="9" rx="0.8" fill="url(#solarGrad)" stroke="#42A5F5" stroke-width="0.4"/>
+              <rect x="85" y="40" width="13" height="9" rx="0.8" fill="url(#solarGrad)" stroke="#42A5F5" stroke-width="0.4"/>
+              <rect x="100" y="35" width="13" height="9" rx="0.8" fill="url(#solarGrad)" stroke="#42A5F5" stroke-width="0.4"/>
+              <!-- Row 2 -->
+              <rect x="70" y="57" width="13" height="9" rx="0.8" fill="url(#solarGrad)" stroke="#42A5F5" stroke-width="0.4"/>
+              <rect x="85" y="51" width="13" height="9" rx="0.8" fill="url(#solarGrad)" stroke="#42A5F5" stroke-width="0.4"/>
+              <rect x="100" y="46" width="13" height="9" rx="0.8" fill="url(#solarGrad)" stroke="#42A5F5" stroke-width="0.4"/>
+              <!-- Panel cell lines -->
+              <line x1="76.5" y1="46" x2="76.5" y2="55" stroke="#90CAF9" stroke-width="0.3" opacity="0.5"/>
+              <line x1="91.5" y1="40" x2="91.5" y2="49" stroke="#90CAF9" stroke-width="0.3" opacity="0.5"/>
+              <line x1="106.5" y1="35" x2="106.5" y2="44" stroke="#90CAF9" stroke-width="0.3" opacity="0.5"/>
+              <line x1="76.5" y1="57" x2="76.5" y2="66" stroke="#90CAF9" stroke-width="0.3" opacity="0.5"/>
+              <line x1="91.5" y1="51" x2="91.5" y2="60" stroke="#90CAF9" stroke-width="0.3" opacity="0.5"/>
+              <line x1="106.5" y1="46" x2="106.5" y2="55" stroke="#90CAF9" stroke-width="0.3" opacity="0.5"/>
+              <!-- H lines -->
+              <line x1="70" y1="50.5" x2="83" y2="50.5" stroke="#90CAF9" stroke-width="0.3" opacity="0.5"/>
+              <line x1="85" y1="44.5" x2="98" y2="44.5" stroke="#90CAF9" stroke-width="0.3" opacity="0.5"/>
+              <line x1="100" y1="39.5" x2="113" y2="39.5" stroke="#90CAF9" stroke-width="0.3" opacity="0.5"/>
+              <line x1="70" y1="61.5" x2="83" y2="61.5" stroke="#90CAF9" stroke-width="0.3" opacity="0.5"/>
+              <line x1="85" y1="55.5" x2="98" y2="55.5" stroke="#90CAF9" stroke-width="0.3" opacity="0.5"/>
+              <line x1="100" y1="50.5" x2="113" y2="50.5" stroke="#90CAF9" stroke-width="0.3" opacity="0.5"/>
+              <!-- Solar glow -->
+              <ellipse cx="92" cy="52" rx="28" ry="16" fill="url(#glowGrad)"/>
+            </g>
+
+            <!-- Main windows -->
+            <rect x="74" y="90" width="15" height="16" rx="1.5" fill="#A8D4F0" opacity="0.75"/>
+            <line x1="81.5" y1="90" x2="81.5" y2="106" stroke="rgba(100,160,200,0.5)" stroke-width="0.8"/>
+            <line x1="74" y1="98" x2="89" y2="98" stroke="rgba(100,160,200,0.5)" stroke-width="0.8"/>
+
+            <rect x="98" y="90" width="15" height="16" rx="1.5" fill="#A8D4F0" opacity="0.75"/>
+            <line x1="105.5" y1="90" x2="105.5" y2="106" stroke="rgba(100,160,200,0.5)" stroke-width="0.8"/>
+            <line x1="98" y1="98" x2="113" y2="98" stroke="rgba(100,160,200,0.5)" stroke-width="0.8"/>
+
+            <rect x="122" y="90" width="15" height="16" rx="1.5" fill="#A8D4F0" opacity="0.75"/>
+            <line x1="129.5" y1="90" x2="129.5" y2="106" stroke="rgba(100,160,200,0.5)" stroke-width="0.8"/>
+            <line x1="122" y1="98" x2="137" y2="98" stroke="rgba(100,160,200,0.5)" stroke-width="0.8"/>
+
+            <!-- Front door -->
+            <rect x="103" y="108" width="15" height="24" rx="1.5" fill="#7A5C3A"/>
+            <rect x="103" y="108" width="15" height="12" rx="1.5" fill="#8B6B47"/>
+            <circle cx="115.5" cy="121" r="1.4" fill="#C8A060"/>
+
+            <!-- Garage door -->
+            <rect x="29" y="93" width="42" height="36" rx="1.5" fill="#B8A880" stroke="#A49870" stroke-width="0.6"/>
+            <line x1="29" y1="104" x2="71" y2="104" stroke="#A49870" stroke-width="0.7" opacity="0.6"/>
+            <line x1="29" y1="114" x2="71" y2="114" stroke="#A49870" stroke-width="0.7" opacity="0.6"/>
+            <line x1="29" y1="124" x2="71" y2="124" stroke="#A49870" stroke-width="0.7" opacity="0.6"/>
+            <line x1="50" y1="93" x2="50" y2="129" stroke="#A49870" stroke-width="0.7" opacity="0.6"/>
+            <!-- Garage window small -->
+            <rect x="35" y="97" width="13" height="5" rx="1" fill="#A8D4F0" opacity="0.4"/>
+            <rect x="52" y="97" width="13" height="5" rx="1" fill="#A8D4F0" opacity="0.4"/>
+
+            <!-- Right wing window -->
+            <rect x="155" y="99" width="13" height="11" rx="1.2" fill="#A8D4F0" opacity="0.6"/>
+            <line x1="161.5" y1="99" x2="161.5" y2="110" stroke="rgba(100,160,200,0.5)" stroke-width="0.7"/>
+          </svg>
+
+          <!-- Corner kW labels -->
+          <div class="kw-labels">
+            <div class="kw-label tl">
+              <span class="kw-val">5.1 kW</span>
+              <span class="kw-desc">Solar</span>
+            </div>
+            <div class="kw-label tr">
+              <span class="kw-val">6.8 kW</span>
+              <span class="kw-desc">Usage</span>
+            </div>
+            <div class="kw-label bl">
+              <span class="kw-val">1.3 kW</span>
+              <span class="kw-desc">To battery</span>
+            </div>
+            <div class="kw-label br">
+              <span class="kw-val">0.4 kW</span>
+              <span class="kw-desc">To utility</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card footer -->
+        <div class="status-footer">
+          <div class="status-footer-left">
+            <div class="total">Total 10.6 kWh</div>
+            <div class="sub">Produced between 12 AM and 3 PM</div>
+          </div>
+          <div class="help-btn">?</div>
+        </div>
+      </div>
+
+      <!-- Autopay Banner -->
+      <div class="autopay-banner">
+        <span class="text">Enroll in autopay</span>
+        <button class="pill-btn">Get started</button>
+      </div>
+
+      <!-- Pagination Dots -->
+      <div class="dots">
+        <div class="dot active"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+
+      <!-- Mini Cards -->
+      <div class="mini-cards">
+        <!-- Left: above target bar chart -->
+        <div class="mini-card">
+          <div class="mini-card-header">
+            <div class="green-dot"></div>
+            <span class="mini-label">Above target</span>
+          </div>
+          <div class="bar-chart-mini">
+            <div class="bar-mini" style="height:42%"></div>
+            <div class="bar-mini" style="height:58%"></div>
+            <div class="bar-mini" style="height:75%"></div>
+            <div class="bar-mini" style="height:52%"></div>
+            <div class="bar-mini" style="height:88%"></div>
+            <div class="bar-mini" style="height:68%"></div>
+            <div class="bar-mini" style="height:100%"></div>
+          </div>
+        </div>
+        <!-- Right: production/usage bars -->
+        <div class="mini-card">
+          <div class="pct-big">85%</div>
+          <div class="pct-label">Production</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:85%"></div></div>
+          <div class="pct-label" style="margin-top:5px">Usage</div>
+          <div class="progress-bar"><div class="progress-fill blue" style="width:58%"></div></div>
+        </div>
       </div>
     </div>
 
-    <div class="scroll">
-      <div class="page-header">
+    <!-- ======== CHARTS ======== -->
+    <div class="screen" id="s-charts">
+      <div class="screen-header">
+        <div class="back-btn" onclick="go('overview')">‹</div>
+        <span class="screen-title" id="chart-title">Production vs Usage</span>
+        <div class="spacer"></div>
+      </div>
+
+      <!-- Sub-nav -->
+      <div class="sub-nav">
+        <div class="sub-tab active" id="subtab-pvu" onclick="switchChart('pvu',this)">Production vs Usage</div>
+        <div class="sub-tab" id="subtab-battery" onclick="switchChart('battery',this)">Battery</div>
+      </div>
+
+      <!-- Production vs Usage content -->
+      <div class="chart-screen-content active" id="chart-pvu">
+        <div class="period-tabs">
+          <div class="period-tab sel" onclick="selP(this)">Day</div>
+          <div class="period-tab" onclick="selP(this)">Week</div>
+          <div class="period-tab" onclick="selP(this)">Month</div>
+          <div class="period-tab" onclick="selP(this)">Year</div>
+          <div class="period-tab" onclick="selP(this)">All</div>
+        </div>
+        <div class="date-nav">
+          <span class="arrow">‹</span>
+          <span class="date">September 5, 2025</span>
+          <span class="arrow">›</span>
+        </div>
+        <div class="net-row">
+          <span class="net-label">Net energy this period ⓘ</span>
+          <span class="net-val">-4.8 kWh</span>
+        </div>
+        <div class="chart-container">
+          <svg class="chart-svg" viewBox="0 0 358 205" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="energyGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/>
+                <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+              </linearGradient>
+              <linearGradient id="usageGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="rgba(147,197,253,0.35)"/>
+                <stop offset="100%" stop-color="rgba(147,197,253,0)"/>
+              </linearGradient>
+            </defs>
+            <!-- Horizontal grid lines -->
+            <line x1="36" y1="12" x2="352" y2="12" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <line x1="36" y1="46" x2="352" y2="46" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <line x1="36" y1="80" x2="352" y2="80" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <line x1="36" y1="114" x2="352" y2="114" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <line x1="36" y1="148" x2="352" y2="148" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <!-- Y labels -->
+            <text x="0" y="16" font-size="9.5" fill="#7A8FAA">600</text>
+            <text x="0" y="50" font-size="9.5" fill="#7A8FAA">450</text>
+            <text x="0" y="84" font-size="9.5" fill="#7A8FAA">300</text>
+            <text x="0" y="118" font-size="9.5" fill="#7A8FAA">150</text>
+            <text x="6" y="152" font-size="9.5" fill="#7A8FAA">0</text>
+            <text x="2" y="165" font-size="9" fill="#7A8FAA">kW</text>
+            <!-- X labels -->
+            <text x="36" y="198" font-size="9" fill="#7A8FAA" text-anchor="middle">0</text>
+            <text x="82" y="198" font-size="9" fill="#7A8FAA" text-anchor="middle">1 am</text>
+            <text x="146" y="198" font-size="9" fill="#7A8FAA" text-anchor="middle">6 am</text>
+            <text x="212" y="198" font-size="9" fill="#7A8FAA" text-anchor="middle">12 pm</text>
+            <text x="278" y="198" font-size="9" fill="#7A8FAA" text-anchor="middle">6 pm</text>
+            <text x="342" y="198" font-size="9" fill="#7A8FAA" text-anchor="middle">12 pm</text>
+            <!-- Energy area fill (white bell curve, peaks ~600) -->
+            <path d="M36,148 C50,148 62,148 78,145 C96,141 108,132 120,115 C134,95 144,58 162,22 C172,10 182,9 192,9 C202,9 212,11 222,22 C238,42 248,76 260,102 C272,127 280,140 296,146 C312,149 326,149 352,149 Z" fill="url(#energyGrad)"/>
+            <path d="M36,148 C50,148 62,148 78,145 C96,141 108,132 120,115 C134,95 144,58 162,22 C172,10 182,9 192,9 C202,9 212,11 222,22 C238,42 248,76 260,102 C272,127 280,140 296,146 C312,149 326,149 352,149" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.6"/>
+            <!-- Usage area fill (blue, flatter ~450) -->
+            <path d="M36,148 C54,147 68,145 88,140 C108,134 126,120 148,98 C162,82 176,62 194,46 C204,38 214,36 224,46 C240,60 254,84 268,104 C282,123 296,137 316,143 C330,147 342,148 352,148 Z" fill="url(#usageGrad)"/>
+            <path d="M36,148 C54,147 68,145 88,140 C108,134 126,120 148,98 C162,82 176,62 194,46 C204,38 214,36 224,46 C240,60 254,84 268,104 C282,123 296,137 316,143 C330,147 342,148 352,148" fill="none" stroke="#93C5FD" stroke-width="1.6"/>
+          </svg>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-box" style="background:#fff;opacity:0.85"></div>Energy</div>
+          <div class="legend-item"><div class="legend-box" style="background:#93C5FD"></div>Usage</div>
+        </div>
+        <div class="details-btn">Details ∨</div>
+      </div>
+
+      <!-- Battery chart content -->
+      <div class="chart-screen-content" id="chart-battery">
+        <div class="period-tabs">
+          <div class="period-tab" onclick="selP(this)">Day</div>
+          <div class="period-tab sel" onclick="selP(this)">Week</div>
+          <div class="period-tab" onclick="selP(this)">Month</div>
+          <div class="period-tab" onclick="selP(this)">Year</div>
+          <div class="period-tab" onclick="selP(this)">All</div>
+        </div>
+        <div class="date-nav">
+          <span class="arrow">‹</span>
+          <span class="date">08/31/2025 – 09/06/2025</span>
+          <span class="arrow">›</span>
+        </div>
+        <div class="net-row">
+          <span class="net-label">Net charge this period ⓘ</span>
+          <span class="net-val">3 kWh</span>
+        </div>
+        <div class="chart-container">
+          <svg class="chart-svg" viewBox="0 0 358 205" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="tealGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="rgba(45,212,191,0.45)"/>
+                <stop offset="100%" stop-color="rgba(45,212,191,0.02)"/>
+              </linearGradient>
+              <linearGradient id="greenGrad2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="rgba(74,222,128,0.38)"/>
+                <stop offset="100%" stop-color="rgba(74,222,128,0.02)"/>
+              </linearGradient>
+            </defs>
+            <!-- Grid lines -->
+            <line x1="36" y1="20" x2="352" y2="20" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <line x1="36" y1="52" x2="352" y2="52" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <line x1="36" y1="84" x2="352" y2="84" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <line x1="36" y1="116" x2="352" y2="116" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <line x1="36" y1="148" x2="352" y2="148" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <!-- Y labels -->
+            <text x="0" y="24" font-size="9.5" fill="#7A8FAA">500</text>
+            <text x="0" y="56" font-size="9.5" fill="#7A8FAA">375</text>
+            <text x="0" y="88" font-size="9.5" fill="#7A8FAA">250</text>
+            <text x="0" y="120" font-size="9.5" fill="#7A8FAA">125</text>
+            <text x="6" y="152" font-size="9.5" fill="#7A8FAA">0</text>
+            <!-- X labels: Su M T W Th F Sa -->
+            <text x="55"  y="198" font-size="10" fill="#7A8FAA" text-anchor="middle">Su</text>
+            <text x="97"  y="198" font-size="10" fill="#7A8FAA" text-anchor="middle">M</text>
+            <text x="139" y="198" font-size="10" fill="#7A8FAA" text-anchor="middle">T</text>
+            <text x="181" y="198" font-size="10" fill="#7A8FAA" text-anchor="middle">W</text>
+            <text x="223" y="198" font-size="10" fill="#7A8FAA" text-anchor="middle">Th</text>
+            <text x="265" y="198" font-size="10" fill="#7A8FAA" text-anchor="middle">F</text>
+            <text x="307" y="198" font-size="10" fill="#7A8FAA" text-anchor="middle">Sa</text>
+            <!-- Teal Charged area (larger, higher) -->
+            <path d="M36,148 C46,148 52,130 62,100 C70,76 80,48 96,30 C108,18 118,16 130,18 C144,21 152,40 166,62 C180,86 190,108 206,120 C220,130 232,134 248,128 C262,122 274,104 288,84 C300,68 310,52 320,44 C330,36 338,34 352,36 L352,148 Z" fill="url(#tealGrad)"/>
+            <path d="M36,148 C46,148 52,130 62,100 C70,76 80,48 96,30 C108,18 118,16 130,18 C144,21 152,40 166,62 C180,86 190,108 206,120 C220,130 232,134 248,128 C262,122 274,104 288,84 C300,68 310,52 320,44 C330,36 338,34 352,36" fill="none" stroke="#2DD4BF" stroke-width="1.8"/>
+            <!-- Green Discharged area (slightly smaller, lower) -->
+            <path d="M36,148 C46,148 54,136 64,110 C73,88 82,62 98,44 C110,30 120,28 132,31 C146,35 154,55 168,76 C182,98 192,116 208,126 C222,134 234,137 250,132 C264,126 276,108 290,90 C302,74 312,60 322,52 C332,44 340,42 352,44 L352,148 Z" fill="url(#greenGrad2)"/>
+            <path d="M36,148 C46,148 54,136 64,110 C73,88 82,62 98,44 C110,30 120,28 132,31 C146,35 154,55 168,76 C182,98 192,116 208,126 C222,134 234,137 250,132 C264,126 276,108 290,90 C302,74 312,60 322,52 C332,44 340,42 352,44" fill="none" stroke="#4ADE80" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-box" style="background:#2DD4BF"></div>Charged</div>
+          <div class="legend-item"><div class="legend-box" style="background:#4ADE80"></div>Discharged</div>
+        </div>
+        <div class="details-btn">Details ∨</div>
+      </div>
+    </div>
+
+    <!-- ======== INBOX ======== -->
+    <div class="screen" id="s-inbox">
+      <div class="inbox-header">
+        <span class="inbox-title">Inbox</span>
+        <span class="gear-btn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7A8FAA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </span>
+      </div>
+      <div class="inbox-subtitle">2 unread</div>
+
+      <!-- Tabs -->
+      <div class="period-tabs" style="margin-bottom:12px">
+        <div class="period-tab sel" onclick="selP(this)">All messages</div>
+        <div class="period-tab" onclick="selP(this)">Chats</div>
+        <div class="period-tab" onclick="selP(this)">Notifications</div>
+      </div>
+
+      <!-- Message list -->
+      <div class="msg-list">
+        <!-- 1. Support chat -->
+        <div class="msg-item">
+          <div class="msg-avatar blue-av">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+              <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+            </svg>
+          </div>
+          <div class="msg-body">
+            <div class="msg-top">
+              <span class="msg-name">Mei Lin (Support)</span>
+              <span class="msg-time">4:39 PM</span>
+            </div>
+            <div class="msg-preview">Hi Carmen, just checking in on your system...</div>
+          </div>
+        </div>
+        <!-- 2. Error notification (badge 3) -->
+        <div class="msg-item">
+          <div class="msg-avatar sunrun-av">
+            <svg class="sun-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="6" fill="white"/>
+              <line x1="16" y1="2" x2="16" y2="7" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="16" y1="25" x2="16" y2="30" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="2" y1="16" x2="7" y2="16" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="25" y1="16" x2="30" y2="16" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="6.8" y1="6.8" x2="10.4" y2="10.4" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="21.6" y1="21.6" x2="25.2" y2="25.2" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="25.2" y1="6.8" x2="21.6" y2="10.4" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="10.4" y1="21.6" x2="6.8" y2="25.2" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+            </svg>
+            <span class="badge">3</span>
+          </div>
+          <div class="msg-body">
+            <div class="msg-top">
+              <span class="msg-name">Error (Notification)</span>
+              <span class="msg-time">Yesterday 1:15 PM</span>
+            </div>
+            <div class="msg-preview">System detected an issue with inverter connection...</div>
+          </div>
+        </div>
+        <!-- 3. Info -->
+        <div class="msg-item">
+          <div class="msg-avatar sunrun-av">
+            <svg class="sun-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="6" fill="white"/>
+              <line x1="16" y1="2" x2="16" y2="7" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="16" y1="25" x2="16" y2="30" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="2" y1="16" x2="7" y2="16" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="25" y1="16" x2="30" y2="16" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="6.8" y1="6.8" x2="10.4" y2="10.4" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="21.6" y1="21.6" x2="25.2" y2="25.2" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="25.2" y1="6.8" x2="21.6" y2="10.4" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="10.4" y1="21.6" x2="6.8" y2="25.2" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="msg-body">
+            <div class="msg-top">
+              <span class="msg-name">Info (Notification)</span>
+              <span class="msg-time">12/14/2025</span>
+            </div>
+            <div class="msg-preview">Your monthly solar production report is ready...</div>
+          </div>
+        </div>
+        <!-- 4. Issue -->
+        <div class="msg-item">
+          <div class="msg-avatar sunrun-av">
+            <svg class="sun-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="6" fill="white"/>
+              <line x1="16" y1="2" x2="16" y2="7" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="16" y1="25" x2="16" y2="30" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="2" y1="16" x2="7" y2="16" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="25" y1="16" x2="30" y2="16" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="6.8" y1="6.8" x2="10.4" y2="10.4" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="21.6" y1="21.6" x2="25.2" y2="25.2" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="25.2" y1="6.8" x2="21.6" y2="10.4" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+              <line x1="10.4" y1="21.6" x2="6.8" y2="25.2" stroke="white" stroke-width="2.4" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="msg-body">
+            <div class="msg-top">
+              <span class="msg-name">Issue (Notification)</span>
+              <span class="msg-time">12/13/2025</span>
+            </div>
+            <div class="msg-preview">Scheduled maintenance window next week...</div>
+          </div>
+        </div>
+        <!-- 5. Group chat -->
+        <div class="msg-item" style="border-bottom:none">
+          <div class="msg-avatar purple-av">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+              <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+            </svg>
+          </div>
+          <div class="msg-body">
+            <div class="msg-top">
+              <span class="msg-name" style="max-width:158px">Michael, Vel, +2 (pre-PTO team)</span>
+              <span class="msg-time">11/7/2025</span>
+            </div>
+            <div class="msg-preview">Great news! Your installation is on track for...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-now-wrap">
+        <button class="chat-now-btn">Chat now</button>
+      </div>
+    </div>
+
+    <!-- ======== OFFERS ======== -->
+    <div class="screen" id="s-offers">
+      <div class="offers-header">
+        <div class="offers-title">Offers</div>
+        <div class="offers-sub">Exclusive deals for Sunrun customers</div>
+      </div>
+      <div class="offer-card">
+        <div class="offer-img">⚡</div>
+        <div class="offer-body">
+          <div class="offer-tag">Limited Time</div>
+          <div class="offer-name">Add a Battery</div>
+          <div class="offer-desc">Store excess solar energy and power your home during outages. Save more with off-peak charging.</div>
+          <button class="offer-btn">Learn more</button>
+        </div>
+      </div>
+      <div class="offer-card">
+        <div class="offer-img" style="background:linear-gradient(135deg,#0F3460,#16213E)">🚗</div>
+        <div class="offer-body">
+          <div class="offer-tag">New Offer</div>
+          <div class="offer-name">EV Charger Installation</div>
+          <div class="offer-desc">Charge your electric vehicle with clean solar energy. Fast Level 2 charger installed by certified technicians.</div>
+          <button class="offer-btn">Get a quote</button>
+        </div>
+      </div>
+      <div class="offer-card">
+        <div class="offer-img" style="background:linear-gradient(135deg,#1A1040,#0D0820)">💡</div>
+        <div class="offer-body">
+          <div class="offer-tag">Popular</div>
+          <div class="offer-name">Refer a Friend</div>
+          <div class="offer-desc">Earn $500 for every friend or neighbor who goes solar with Sunrun. No limit on referrals.</div>
+          <button class="offer-btn">Refer now</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======== ACCOUNT ======== -->
+    <div class="screen" id="s-account">
+      <div class="account-header">
+        <div class="account-title">Account</div>
+      </div>
+      <div class="account-avatar-row">
+        <div class="account-avatar">C</div>
         <div>
-          <div class="header-sup">Good morning ☀️</div>
-          <div class="header-title">Alex Johnson</div>
-        </div>
-        <div class="icon-btn badge">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <div class="account-name">Carmen Rodriguez</div>
+          <div class="account-email">carmen.r@email.com</div>
         </div>
       </div>
-
-      <div class="weather-pill">
-        ☀️ San Diego, CA &nbsp;·&nbsp; <strong>74 °F · Sunny</strong> &nbsp;·&nbsp; Great solar day
-      </div>
-
-      <!-- Power flow -->
-      <div class="flow-card">
-        <div class="flow-status">
-          <div class="pulse-dot"></div>
-          <span class="flow-status-text">System Active · Generating</span>
-        </div>
-        <div class="power-hero">
-          <div class="power-num">4.2</div>
-          <div class="power-unit">kW currently producing</div>
-        </div>
-        <div class="flow-nodes">
-          <!-- Solar -->
-          <div class="flow-node">
-            <div class="flow-icon fi-solar">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="5" fill="#FCD34D"/><line x1="12" y1="2" x2="12" y2="4" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="20" x2="12" y2="22" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="12" x2="4" y2="12" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="12" x2="22" y2="12" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/><line x1="19.78" y1="4.22" x2="18.36" y2="5.64" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/><line x1="5.64" y1="18.36" x2="4.22" y2="19.78" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/></svg>
-            </div>
-            <span class="flow-lbl">Solar</span>
-            <span class="flow-val" style="color:#FCD34D">4.2 kW</span>
+      <div class="settings-section">
+        <div class="settings-section-title">My System</div>
+        <div class="settings-list">
+          <div class="settings-row">
+            <div class="settings-row-left"><span class="settings-icon">🏠</span><span class="settings-row-label">System details</span></div>
+            <span class="chev">›</span>
           </div>
-          <div class="flow-connector">
-            <div class="flow-track"></div>
-            <svg class="flow-arrow-head" width="7" height="12" viewBox="0 0 7 12"><path d="M0 0l7 6-7 6V0z" fill="#5B9BFF"/></svg>
+          <div class="settings-row">
+            <div class="settings-row-left"><span class="settings-icon">📄</span><span class="settings-row-label">Documents</span></div>
+            <span class="chev">›</span>
           </div>
-          <!-- Home -->
-          <div class="flow-node">
-            <div class="flow-icon fi-home">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5B9BFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            </div>
-            <span class="flow-lbl">Home</span>
-            <span class="flow-val" style="color:#C3DBFF">2.8 kW</span>
-          </div>
-          <div class="flow-connector">
-            <div class="flow-track"></div>
-            <svg class="flow-arrow-head" width="7" height="12" viewBox="0 0 7 12"><path d="M0 0l7 6-7 6V0z" fill="#5B9BFF"/></svg>
-          </div>
-          <!-- Battery -->
-          <div class="flow-node">
-            <div class="flow-icon fi-batt">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="16" height="11" rx="2"/><path d="M22 11v3"/><line x1="5.5" y1="12.5" x2="12.5" y2="12.5" stroke="#4ADE80" stroke-width="2.5"/></svg>
-            </div>
-            <span class="flow-lbl">Battery</span>
-            <span class="flow-val" style="color:#4ADE80">86%</span>
+          <div class="settings-row">
+            <div class="settings-row-left"><span class="settings-icon">💳</span><span class="settings-row-label">Billing &amp; payments</span></div>
+            <span class="chev">›</span>
           </div>
         </div>
       </div>
-
-      <!-- Quick stats -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-emoji">⚡</div>
-          <div class="stat-val" style="color:#FCD34D">18.4</div>
-          <div class="stat-lbl">kWh Today</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-emoji">💰</div>
-          <div class="stat-val" style="color:#4ADE80">$4.78</div>
-          <div class="stat-lbl">Saved Today</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-emoji">🌿</div>
-          <div class="stat-val" style="color:#4ADE80">12.3</div>
-          <div class="stat-lbl">lbs CO₂</div>
-        </div>
-      </div>
-
-      <!-- Savings -->
-      <div class="card savings-card">
-        <div class="card-label">Monthly Savings</div>
-        <div class="savings-amount">$142.50</div>
-        <div class="savings-sub">vs. estimated utility bill · 72% of monthly goal</div>
-        <div class="prog-bar"><div class="prog-fill"></div></div>
-        <div class="prog-row">
-          <span class="prog-lbl">$0</span>
-          <span class="prog-lbl" style="color:#4ADE80">$142.50 saved</span>
-          <span class="prog-lbl">$198 goal</span>
-        </div>
-      </div>
-
-      <!-- Activity -->
-      <div class="section-row">
-        <span class="section-title">Recent Activity</span>
-        <span class="section-link">See all</span>
-      </div>
-      <div class="card" style="padding:10px 20px">
-        <div class="act-item">
-          <div class="act-dot" style="background:#4ADE80"></div>
-          <div class="act-text"><strong>Peak production</strong> reached — 5.1 kW at 1:14 PM</div>
-          <div class="act-time">2h ago</div>
-        </div>
-        <div class="act-item">
-          <div class="act-dot" style="background:#5B9BFF"></div>
-          <div class="act-text"><strong>Battery fully charged</strong> to 100%</div>
-          <div class="act-time">4h ago</div>
-        </div>
-        <div class="act-item">
-          <div class="act-dot" style="background:#F59E0B"></div>
-          <div class="act-text"><strong>Exported 8.2 kWh</strong> to grid this morning</div>
-          <div class="act-time">6h ago</div>
-        </div>
-        <div class="act-item">
-          <div class="act-dot" style="background:#8A9BB5"></div>
-          <div class="act-text"><strong>System started</strong> generating at sunrise</div>
-          <div class="act-time">9h ago</div>
-        </div>
-      </div>
-
-      <!-- Upcoming bill -->
-      <div class="section-row">
-        <span class="section-title">Upcoming Bill</span>
-        <span class="section-link">Pay now</span>
-      </div>
-      <div class="bill-card">
-        <div class="bill-row">
-          <div>
-            <div class="bill-amount">$87.20</div>
-            <div class="bill-due">Due March 28, 2026</div>
+      <div class="settings-section">
+        <div class="settings-section-title">Preferences</div>
+        <div class="settings-list">
+          <div class="settings-row">
+            <div class="settings-row-left"><span class="settings-icon">🔔</span><span class="settings-row-label">Notifications</span></div>
+            <span class="chev">›</span>
           </div>
-          <span class="pill pill-green">Auto-pay on</span>
+          <div class="settings-row">
+            <div class="settings-row-left"><span class="settings-icon">🔒</span><span class="settings-row-label">Security</span></div>
+            <span class="chev">›</span>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-left"><span class="settings-icon">🌐</span><span class="settings-row-label">Language</span></div>
+            <span class="settings-row-right">English</span>
+          </div>
         </div>
-        <button class="btn-outline">View Bill Details</button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Support</div>
+        <div class="settings-list">
+          <div class="settings-row">
+            <div class="settings-row-left"><span class="settings-icon">❓</span><span class="settings-row-label">Help center</span></div>
+            <span class="chev">›</span>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-left"><span class="settings-icon">📞</span><span class="settings-row-label">Contact us</span></div>
+            <span class="chev">›</span>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-left"><span class="settings-icon">⬆️</span><span class="settings-row-label">App version</span></div>
+            <span class="settings-row-right">4.2.1</span>
+          </div>
+        </div>
+      </div>
+      <div class="signout-wrap">
+        <button class="signout-btn">Sign out</button>
       </div>
     </div>
 
-    <div class="bottom-nav">
-      <button class="nav-btn active" onclick="goTo('home')">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5B9BFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <span class="nav-label" style="color:#5B9BFF">Home</span>
-      </button>
-      <button class="nav-btn" onclick="goTo('energy')">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        <span class="nav-label">Energy</span>
-      </button>
-      <button class="nav-btn" onclick="goTo('benefits')">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        <span class="nav-label">Benefits</span>
-      </button>
-      <button class="nav-btn" onclick="goTo('account')">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span class="nav-label">Account</span>
-      </button>
+  </div><!-- /screens -->
+
+  <!-- Bottom Nav -->
+  <div id="bottomnav">
+    <div class="nav-tab active" id="nav-overview" onclick="go('overview')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span>Overview</span>
     </div>
-  </div>
-
-  <!-- ═══════════════════════ ENERGY ═══════════════════════ -->
-  <div class="screen" id="screen-energy">
-    <div class="status-bar">
-      <span class="status-time" id="time-energy">9:41</span>
-      <div class="status-icons"><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="white" stroke-opacity=".35"/><rect x="2" y="2" width="17" height="8" rx="2" fill="white"/><path d="M23 4v4a2 2 0 000-4z" fill="white" opacity=".4"/></svg></div>
+    <div class="nav-tab" id="nav-charts" onclick="go('charts')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/>
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      <span>Charts</span>
     </div>
-    <div class="scroll">
-      <div class="page-header">
-        <div>
-          <div class="header-sup">Monitor</div>
-          <div class="header-title">Energy</div>
-        </div>
-        <div class="icon-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
-        </div>
-      </div>
-
-      <div class="period-tabs">
-        <div class="period-tab active" onclick="selPeriod(this)">Day</div>
-        <div class="period-tab" onclick="selPeriod(this)">Week</div>
-        <div class="period-tab" onclick="selPeriod(this)">Month</div>
-        <div class="period-tab" onclick="selPeriod(this)">Year</div>
-      </div>
-
-      <div class="chart-box">
-        <div class="chart-top">
-          <div>
-            <div class="chart-total">38.6 kWh</div>
-            <div class="chart-sub">Total produced this week</div>
-          </div>
-          <div style="text-align:right">
-            <div class="chart-delta">+12%</div>
-            <div class="chart-sub">vs last week</div>
-          </div>
-        </div>
-
-        <svg width="100%" viewBox="0 0 320 130" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="gSolar" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#FCD34D"/>
-              <stop offset="100%" stop-color="#F59E0B" stop-opacity=".7"/>
-            </linearGradient>
-            <linearGradient id="gSolarHi" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#FFE580"/>
-              <stop offset="100%" stop-color="#F59E0B"/>
-            </linearGradient>
-            <linearGradient id="gGrid" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#60A5FA"/>
-              <stop offset="100%" stop-color="#3B82F6" stop-opacity=".7"/>
-            </linearGradient>
-          </defs>
-          <!-- grid lines -->
-          <line x1="0" y1="20" x2="320" y2="20" stroke="#1E2A42" stroke-width="1"/>
-          <line x1="0" y1="50" x2="320" y2="50" stroke="#1E2A42" stroke-width="1"/>
-          <line x1="0" y1="80" x2="320" y2="80" stroke="#1E2A42" stroke-width="1"/>
-          <!-- Mon -->
-          <rect x="8"   y="60"  width="30" height="55" rx="4" fill="url(#gSolar)"/>
-          <rect x="8"   y="47"  width="30" height="13" rx="4" fill="url(#gGrid)"/>
-          <!-- Tue -->
-          <rect x="54"  y="40"  width="30" height="75" rx="4" fill="url(#gSolar)"/>
-          <rect x="54"  y="28"  width="30" height="12" rx="4" fill="url(#gGrid)"/>
-          <!-- Wed (selected) -->
-          <rect x="100" y="30"  width="30" height="85" rx="4" fill="url(#gSolarHi)"/>
-          <rect x="100" y="18"  width="30" height="12" rx="4" fill="url(#gGrid)"/>
-          <rect x="93"  y="5"   width="44" height="20" rx="5" fill="#1A2E4A"/>
-          <text x="115" y="19" text-anchor="middle" fill="#FFFCF5" font-size="10" font-weight="700">8.2</text>
-          <!-- Thu -->
-          <rect x="146" y="50"  width="30" height="65" rx="4" fill="url(#gSolar)"/>
-          <rect x="146" y="38"  width="30" height="12" rx="4" fill="url(#gGrid)"/>
-          <!-- Fri -->
-          <rect x="192" y="45"  width="30" height="70" rx="4" fill="url(#gSolar)"/>
-          <rect x="192" y="33"  width="30" height="12" rx="4" fill="url(#gGrid)"/>
-          <!-- Sat -->
-          <rect x="238" y="62"  width="30" height="53" rx="4" fill="url(#gSolar)"/>
-          <rect x="238" y="50"  width="30" height="12" rx="4" fill="url(#gGrid)"/>
-          <!-- Sun -->
-          <rect x="284" y="72"  width="30" height="43" rx="4" fill="url(#gSolar)"/>
-          <rect x="284" y="60"  width="30" height="12" rx="4" fill="url(#gGrid)"/>
-          <!-- labels -->
-          <text x="23"  y="126" text-anchor="middle" fill="#8A9BB5" font-size="10">Mon</text>
-          <text x="69"  y="126" text-anchor="middle" fill="#8A9BB5" font-size="10">Tue</text>
-          <text x="115" y="126" text-anchor="middle" fill="#FFFCF5" font-size="10" font-weight="700">Wed</text>
-          <text x="161" y="126" text-anchor="middle" fill="#8A9BB5" font-size="10">Thu</text>
-          <text x="207" y="126" text-anchor="middle" fill="#8A9BB5" font-size="10">Fri</text>
-          <text x="253" y="126" text-anchor="middle" fill="#8A9BB5" font-size="10">Sat</text>
-          <text x="299" y="126" text-anchor="middle" fill="#8A9BB5" font-size="10">Sun</text>
+    <div class="nav-tab" id="nav-inbox" onclick="go('inbox')">
+      <div class="nav-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
-
-        <div class="legend-row">
-          <div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div>Solar Production</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div>Grid Import</div>
-        </div>
+        <span class="badge">2</span>
       </div>
-
-      <!-- Breakdown -->
-      <div class="section-row"><span class="section-title">Breakdown</span></div>
-      <div class="bd-grid">
-        <div class="bd-card">
-          <div class="bd-icon" style="background:rgba(252,211,77,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="5" fill="#FCD34D"/><line x1="12" y1="2" x2="12" y2="4" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="20" x2="12" y2="22" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="12" x2="4" y2="12" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="12" x2="22" y2="12" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/></svg></div>
-          <div class="bd-val" style="color:#FCD34D">32.4 kWh</div>
-          <div class="bd-lbl">Solar Produced</div>
-        </div>
-        <div class="bd-card">
-          <div class="bd-icon" style="background:rgba(74,222,128,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-          <div class="bd-val" style="color:#4ADE80">29.1 kWh</div>
-          <div class="bd-lbl">Self-consumed</div>
-        </div>
-        <div class="bd-card">
-          <div class="bd-icon" style="background:rgba(91,155,255,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B9BFF" stroke-width="2" stroke-linecap="round"><path d="M5 12l7-7 7 7M12 5v14"/></svg></div>
-          <div class="bd-val" style="color:#5B9BFF">6.2 kWh</div>
-          <div class="bd-lbl">Grid Import</div>
-        </div>
-        <div class="bd-card">
-          <div class="bd-icon" style="background:rgba(245,158,11,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"><path d="M5 12l7 7 7-7M12 19V5"/></svg></div>
-          <div class="bd-val" style="color:#F59E0B">3.3 kWh</div>
-          <div class="bd-lbl">Grid Export</div>
-        </div>
-      </div>
-
-      <!-- System status -->
-      <div class="section-row"><span class="section-title">System Status</span></div>
-      <div class="card" style="padding:10px 20px">
-        <div class="act-item"><div class="act-dot" style="background:#4ADE80"></div><div class="act-text"><strong>Inverter</strong> — Operating normally</div><span class="pill pill-green" style="font-size:11px">OK</span></div>
-        <div class="act-item"><div class="act-dot" style="background:#4ADE80"></div><div class="act-text"><strong>Battery</strong> — 86% charged</div><span class="pill pill-green" style="font-size:11px">OK</span></div>
-        <div class="act-item"><div class="act-dot" style="background:#4ADE80"></div><div class="act-text"><strong>14 panels</strong> — All active</div><span class="pill pill-green" style="font-size:11px">OK</span></div>
-        <div class="act-item"><div class="act-dot" style="background:#F59E0B"></div><div class="act-text"><strong>Grid</strong> — Outage detected nearby</div><span style="font-size:13px">⚠️</span></div>
-      </div>
+      <span>Inbox</span>
     </div>
-
-    <div class="bottom-nav">
-      <button class="nav-btn" onclick="goTo('home')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></button>
-      <button class="nav-btn active" onclick="goTo('energy')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5B9BFF" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nav-label" style="color:#5B9BFF">Energy</span></button>
-      <button class="nav-btn" onclick="goTo('benefits')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span class="nav-label">Benefits</span></button>
-      <button class="nav-btn" onclick="goTo('account')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="nav-label">Account</span></button>
+    <div class="nav-tab" id="nav-offers" onclick="go('offers')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+        <line x1="7" y1="7" x2="7.01" y2="7"/>
+      </svg>
+      <span>Offers</span>
+    </div>
+    <div class="nav-tab" id="nav-account" onclick="go('account')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      <span>Account</span>
     </div>
   </div>
 
-  <!-- ═══════════════════════ BENEFITS ═══════════════════════ -->
-  <div class="screen" id="screen-benefits">
-    <div class="status-bar">
-      <span class="status-time" id="time-benefits">9:41</span>
-      <div class="status-icons"><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="white" stroke-opacity=".35"/><rect x="2" y="2" width="17" height="8" rx="2" fill="white"/><path d="M23 4v4a2 2 0 000-4z" fill="white" opacity=".4"/></svg></div>
-    </div>
-    <div class="scroll">
-      <div class="impact-hero">
-        <div class="impact-hero-title">Your Impact</div>
-        <div class="impact-hero-sub">Since installation · March 2022</div>
-      </div>
-
-      <div class="total-savings-card">
-        <div class="total-label">Total Lifetime Savings</div>
-        <div class="total-amount">$4,218</div>
-        <div class="total-note">On track to save <strong>$1,400+</strong> this year</div>
-      </div>
-
-      <div class="impact-card">
-        <div class="impact-emoji-bg" style="background:rgba(252,211,77,.12)">⚡</div>
-        <div><div class="impact-val" style="color:#FCD34D">12,840 kWh</div><div class="impact-lbl">Clean energy generated</div></div>
-      </div>
-      <div class="impact-card">
-        <div class="impact-emoji-bg" style="background:rgba(74,222,128,.12)">🌍</div>
-        <div><div class="impact-val" style="color:#4ADE80">9.1 tons</div><div class="impact-lbl">CO₂ emissions avoided</div></div>
-      </div>
-      <div class="impact-card">
-        <div class="impact-emoji-bg" style="background:rgba(74,222,128,.1)">🌳</div>
-        <div><div class="impact-val" style="color:#4ADE80">412 trees</div><div class="impact-lbl">Equivalent trees planted</div></div>
-      </div>
-      <div class="impact-card">
-        <div class="impact-emoji-bg" style="background:rgba(91,155,255,.12)">🚗</div>
-        <div><div class="impact-val" style="color:#5B9BFF">22,800 mi</div><div class="impact-lbl">Gas car miles offset</div></div>
-      </div>
-
-      <div class="section-row" style="margin-top:6px">
-        <span class="section-title">Savings History</span>
-        <span class="section-link">View all</span>
-      </div>
-      <div class="card" style="padding:4px 20px">
-        <div class="hist-row"><span class="hist-month">February 2026</span><span class="hist-kwh">402 kWh</span><span class="hist-amount">$134.20</span></div>
-        <div class="hist-row"><span class="hist-month">January 2026</span><span class="hist-kwh">354 kWh</span><span class="hist-amount">$118.50</span></div>
-        <div class="hist-row"><span class="hist-month">December 2025</span><span class="hist-kwh">288 kWh</span><span class="hist-amount">$96.30</span></div>
-        <div class="hist-row"><span class="hist-month">November 2025</span><span class="hist-kwh">316 kWh</span><span class="hist-amount">$105.80</span></div>
-      </div>
-    </div>
-
-    <div class="bottom-nav">
-      <button class="nav-btn" onclick="goTo('home')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></button>
-      <button class="nav-btn" onclick="goTo('energy')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nav-label">Energy</span></button>
-      <button class="nav-btn active" onclick="goTo('benefits')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5B9BFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span class="nav-label" style="color:#5B9BFF">Benefits</span></button>
-      <button class="nav-btn" onclick="goTo('account')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="nav-label">Account</span></button>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════ ACCOUNT ═══════════════════════ -->
-  <div class="screen" id="screen-account">
-    <div class="status-bar">
-      <span class="status-time" id="time-account">9:41</span>
-      <div class="status-icons"><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="white" stroke-opacity=".35"/><rect x="2" y="2" width="17" height="8" rx="2" fill="white"/><path d="M23 4v4a2 2 0 000-4z" fill="white" opacity=".4"/></svg></div>
-    </div>
-    <div class="scroll">
-      <div class="acct-header">
-        <div class="acct-avatar">AJ</div>
-        <div class="acct-name">Alex Johnson</div>
-        <div class="acct-email">alex.johnson@email.com</div>
-      </div>
-
-      <!-- Bill -->
-      <div class="bill-card" style="margin-bottom:22px">
-        <div class="bill-row">
-          <div>
-            <div style="font-size:11px;color:#8A9BB5;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px">Next Bill</div>
-            <div class="bill-amount">$87.20</div>
-            <div class="bill-due">Due March 28, 2026</div>
-          </div>
-          <span class="pill pill-green">Auto-pay</span>
-        </div>
-        <button class="btn-outline">Make a Payment</button>
-      </div>
-
-      <!-- My System -->
-      <div class="menu-section">
-        <div class="menu-section-lbl">My System</div>
-        <div class="menu-item">
-          <div class="menu-icon" style="background:rgba(252,211,77,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="5" fill="#FCD34D"/><line x1="12" y1="2" x2="12" y2="4" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="20" x2="12" y2="22" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/><line x1="2" y1="12" x2="4" y2="12" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="12" x2="22" y2="12" stroke="#FCD34D" stroke-width="2" stroke-linecap="round"/></svg></div>
-          <div class="menu-text"><div class="menu-title">Solar System Details</div><div class="menu-sub">14 panels · 5.6 kW capacity</div></div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-        <div class="menu-item">
-          <div class="menu-icon" style="background:rgba(74,222,128,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="16" height="11" rx="2"/><path d="M22 11v3"/></svg></div>
-          <div class="menu-text"><div class="menu-title">Battery Storage</div><div class="menu-sub">Brightbox · 13.5 kWh · 86% charged</div></div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-        <div class="menu-item">
-          <div class="menu-icon" style="background:rgba(91,155,255,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B9BFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-          <div class="menu-text"><div class="menu-title">Service Address</div><div class="menu-sub">123 Sunny Ave, San Diego, CA 92101</div></div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-
-      <!-- Billing -->
-      <div class="menu-section">
-        <div class="menu-section-lbl">Billing & Payments</div>
-        <div class="menu-item">
-          <div class="menu-icon" style="background:rgba(91,155,255,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B9BFF" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
-          <div class="menu-text"><div class="menu-title">Payment Method</div><div class="menu-sub">Visa •••• 4242</div></div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-        <div class="menu-item">
-          <div class="menu-icon" style="background:rgba(138,155,181,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-          <div class="menu-text"><div class="menu-title">Billing History</div><div class="menu-sub">View past statements</div></div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-
-      <!-- Support -->
-      <div class="menu-section">
-        <div class="menu-section-lbl">Support</div>
-        <div class="menu-item">
-          <div class="menu-icon" style="background:rgba(91,155,255,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B9BFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
-          <div class="menu-text"><div class="menu-title">Chat with Support</div><div class="menu-sub">Avg response: 2 min</div></div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-        <div class="menu-item">
-          <div class="menu-icon" style="background:rgba(138,155,181,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-          <div class="menu-text"><div class="menu-title">FAQ & Help Center</div><div class="menu-sub">Browse articles</div></div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-
-      <!-- Sign out -->
-      <div class="menu-section">
-        <div class="menu-item" style="border-color:#3A1818" onclick="goTo('login')">
-          <div class="menu-icon" style="background:rgba(239,68,68,.1)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div>
-          <div class="menu-text"><div class="menu-title" style="color:#EF4444">Sign Out</div></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="bottom-nav">
-      <button class="nav-btn" onclick="goTo('home')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Home</span></button>
-      <button class="nav-btn" onclick="goTo('energy')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span class="nav-label">Energy</span></button>
-      <button class="nav-btn" onclick="goTo('benefits')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A9BB5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><span class="nav-label">Benefits</span></button>
-      <button class="nav-btn active" onclick="goTo('account')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5B9BFF" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="nav-label" style="color:#5B9BFF">Account</span></button>
-    </div>
-  </div>
-
-</div>
+</div><!-- /phone -->
 
 <script>
-  const screens = ['login','home','energy','benefits','account'];
+  // ── Live clock ──────────────────────────────────────────────
+  function updateClock() {
+    var now = new Date();
+    var h = now.getHours(), m = now.getMinutes();
+    h = h % 12 || 12;
+    document.getElementById('clock').textContent = h + ':' + (m < 10 ? '0' : '') + m;
+  }
+  updateClock();
+  setInterval(updateClock, 15000);
 
-  function goTo(id) {
-    screens.forEach(s => document.getElementById('screen-' + s).classList.remove('active'));
-    document.getElementById('screen-' + id).classList.add('active');
+  // ── Screen navigation ────────────────────────────────────────
+  var allScreens = ['overview', 'charts', 'inbox', 'offers', 'account'];
+
+  function go(id) {
+    allScreens.forEach(function(s) {
+      document.getElementById('s-' + s).classList.remove('active');
+      document.getElementById('nav-' + s).classList.remove('active');
+    });
+    document.getElementById('s-' + id).classList.add('active');
+    document.getElementById('nav-' + id).classList.add('active');
   }
 
-  function selPeriod(el) {
-    el.closest('.period-tabs').querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+  // ── Period tab selector ──────────────────────────────────────
+  // Scoped to the parent .period-tabs container
+  function selP(el) {
+    var container = el.parentElement;
+    var tabs = container.querySelectorAll('.period-tab');
+    tabs.forEach(function(t) { t.classList.remove('sel'); });
+    el.classList.add('sel');
+  }
+
+  // ── Chart type switch ────────────────────────────────────────
+  function switchChart(type, el) {
+    // Sub-tab highlight
+    document.getElementById('subtab-pvu').classList.remove('active');
+    document.getElementById('subtab-battery').classList.remove('active');
     el.classList.add('active');
+    // Content
+    document.getElementById('chart-pvu').classList.remove('active');
+    document.getElementById('chart-battery').classList.remove('active');
+    document.getElementById('chart-' + type).classList.add('active');
+    // Title
+    document.getElementById('chart-title').textContent =
+      type === 'pvu' ? 'Production vs Usage' : 'Battery';
   }
 
-  function tick() {
-    const now = new Date();
-    const t = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
-    document.querySelectorAll('[id^="time-"]').forEach(el => el.textContent = t);
+  // ── Responsive: fill screen on small viewports ───────────────
+  function applyResponsive() {
+    var phone = document.getElementById('phone');
+    var vw = window.innerWidth, vh = window.innerHeight;
+    if (vw <= 420 || vh <= 870) {
+      phone.style.cssText = 'width:100vw;height:100dvh;border-radius:0;box-shadow:none;';
+    } else {
+      phone.style.cssText = 'width:390px;height:844px;border-radius:48px;';
+    }
   }
-  tick();
-  setInterval(tick, 15000);
+  applyResponsive();
+  window.addEventListener('resize', applyResponsive);
 </script>
 </body>
 </html>

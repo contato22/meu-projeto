@@ -25,6 +25,12 @@
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
     overflow: hidden;
   }
+  /* Phone wrapper — scales the shell to fit the viewport */
+  #phone-wrap {
+    transform-origin: center center;
+    transform: scale(var(--phone-scale, 1));
+    line-height: 1;
+  }
   /* Phone shell */
   #phone {
     width: 390px; height: 844px;
@@ -34,6 +40,11 @@
     position: relative;
     box-shadow: 0 0 0 10px #1C1C1E, 0 0 0 12px #3A3A3C, 0 30px 80px rgba(0,0,0,0.7);
     display: flex; flex-direction: column;
+    /* Mobile touch feel */
+    -webkit-overflow-scrolling: touch;
+    cursor: default;
+    user-select: none;
+    -webkit-user-select: none;
   }
   /* Notch */
   #notch {
@@ -66,7 +77,10 @@
   }
   .screen.active { display: flex; }
   .screen::-webkit-scrollbar { display: none; }
-  .screen { -ms-overflow-style: none; scrollbar-width: none; }
+  .screen { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  button, .nav-tab, .period-tab, .sub-tab, .back-btn, .details-btn, .msg-item {
+    touch-action: manipulation;
+  }
 
   /* Bottom Nav */
   #bottomnav {
@@ -392,6 +406,7 @@
 </style>
 </head>
 <body>
+<div id="phone-wrap">
 <div id="phone">
   <!-- Notch -->
   <div id="notch"></div>
@@ -1047,8 +1062,25 @@
   </div>
 
 </div><!-- /phone -->
+</div><!-- /phone-wrap -->
 
 <script>
+  // ── Phone scale: fit nicely on desktop, full-size on mobile ──
+  function scalePhone() {
+    var PHONE_W = 390, PHONE_H = 844, PAD = 32;
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var scale = Math.min(
+      (vw - PAD) / PHONE_W,
+      (vh - PAD) / PHONE_H,
+      0.82          // max scale — never larger than 82% on desktop
+    );
+    // On real mobile (narrow viewport) fill the screen
+    if (vw <= 430) scale = vw / PHONE_W;
+    document.getElementById('phone-wrap').style.setProperty('--phone-scale', scale);
+  }
+  scalePhone();
+  window.addEventListener('resize', scalePhone);
+
   // ── Live clock ──────────────────────────────────────────────
   function updateClock() {
     var now = new Date();

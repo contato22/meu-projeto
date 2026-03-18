@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERP AWQ</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-light: #dbeafe;
+    --sidebar-bg: #0f172a;
+    --sidebar-hover: #1e293b;
+    --sidebar-active: #2563eb;
+    --bg: #f1f5f9;
+    --card-bg: #ffffff;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #06b6d4;
+    --radius: 10px;
+    --shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  #sidebar {
+    width: 240px; min-height: 100vh; background: var(--sidebar-bg);
+    display: flex; flex-direction: column; position: fixed; top: 0; left: 0; z-index: 100;
+    transition: width .2s;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 16px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .logo-icon {
+    width: 36px; height: 36px; background: var(--primary); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px; color: #fff;
+  }
+  .logo-text { color: #fff; font-weight: 700; font-size: 18px; }
+  .logo-sub { color: #94a3b8; font-size: 11px; }
+
+  .sidebar-nav { flex: 1; padding: 16px 10px; display: flex; flex-direction: column; gap: 2px; }
+  .nav-section-label {
+    color: #475569; font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .08em; padding: 10px 10px 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    color: #94a3b8; font-size: 14px; font-weight: 500;
+    transition: background .15s, color .15s;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--sidebar-hover); color: #e2e8f0; }
+  .nav-item.active { background: var(--sidebar-active); color: #fff; }
+  .nav-item svg { flex-shrink: 0; }
+
+  .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,.06); }
+  .user-info { display: flex; align-items: center; gap: 10px; }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--primary);
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700;
+  }
+  .user-name { color: #e2e8f0; font-size: 13px; font-weight: 600; }
+  .user-role { color: #64748b; font-size: 11px; }
+
+  /* Main */
+  #main { margin-left: 240px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* Topbar */
+  #topbar {
+    height: 64px; background: var(--card-bg); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-title { font-size: 18px; font-weight: 700; color: var(--text); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar-btn {
+    width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+    background: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); transition: background .15s;
+  }
+  .topbar-btn:hover { background: var(--bg); }
+  .badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600;
+  }
+  .badge-primary { background: var(--primary-light); color: var(--primary); }
+  .badge-success { background: #dcfce7; color: #16a34a; }
+  .badge-danger { background: #fee2e2; color: #dc2626; }
+  .badge-warning { background: #fef9c3; color: #ca8a04; }
+  .badge-gray { background: #f1f5f9; color: #64748b; }
+
+  /* Content */
+  #content { padding: 28px; flex: 1; }
+
+  /* Page */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Cards */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .kpi-card {
+    background: var(--card-bg); border-radius: var(--radius); padding: 20px;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .kpi-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .kpi-value { font-size: 26px; font-weight: 800; color: var(--text); }
+  .kpi-sub { font-size: 12px; color: var(--text-muted); }
+  .kpi-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 4px;
+  }
+
+  /* Table card */
+  .card {
+    background: var(--card-bg); border-radius: var(--radius); padding: 24px;
+    box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 20px;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+  }
+  .card-title { font-size: 16px; font-weight: 700; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600;
+    cursor: pointer; border: none; transition: background .15s, transform .1s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-outline { background: none; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { background: var(--bg); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 700;
+       color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em;
+       border-bottom: 2px solid var(--border); white-space: nowrap; }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    z-index: 200; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card-bg); border-radius: 14px; padding: 28px;
+    width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
+  .form-control {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; font-family: inherit; background: var(--bg); color: var(--text);
+    transition: border-color .15s;
+  }
+  .form-control:focus { outline: none; border-color: var(--primary); background: #fff; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  /* Pipeline */
+  .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .pipeline-col { background: var(--bg); border-radius: var(--radius); padding: 14px; }
+  .pipeline-header { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 12px; color: var(--text-muted); }
+  .pipeline-card {
+    background: var(--card-bg); border-radius: 8px; padding: 14px;
+    border: 1px solid var(--border); margin-bottom: 10px; box-shadow: var(--shadow);
+  }
+  .pipeline-card-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .pipeline-card-sub { font-size: 12px; color: var(--text-muted); }
+  .pipeline-card-value { font-size: 15px; font-weight: 700; color: var(--primary); margin-top: 8px; }
+
+  /* Progress bar */
+  .progress { height: 6px; background: var(--border); border-radius: 99px; margin-top: 8px; }
+  .progress-bar { height: 100%; border-radius: 99px; background: var(--primary); }
+
+  /* Saldo */
+  .saldo-positive { color: var(--success) !important; }
+  .saldo-negative { color: var(--danger) !important; }
+
+  /* Empty state */
+  .empty { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
+
+  /* Loading */
+  .loading { text-align: center; padding: 30px; color: var(--text-muted); }
+
+  /* Toast */
+  #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: #1e293b; color: #fff; padding: 12px 20px; border-radius: 10px;
+    font-size: 14px; box-shadow: 0 4px 20px rgba(0,0,0,.3);
+    animation: slideIn .2s ease;
+  }
+  .toast.success { border-left: 4px solid var(--success); }
+  .toast.error { border-left: 4px solid var(--danger); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    #sidebar { width: 60px; }
+    .logo-text, .logo-sub, .nav-item span, .nav-section-label, .user-name, .user-role { display: none; }
+    #main { margin-left: 60px; }
+    .pipeline { grid-template-columns: 1fr 1fr; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">A</div>
+    <div>
+      <div class="logo-text">AWQ</div>
+      <div class="logo-sub">ERP System</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Principal</div>
+    <button class="nav-item active" onclick="goTo('dashboard', this)">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span>Dashboard</span>
+    </button>
+
+    <div class="nav-section-label">Vendas & CRM</div>
+    <button class="nav-item" onclick="goTo('clientes', this)">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Clientes</span>
+    </button>
+    <button class="nav-item" onclick="goTo('oportunidades', this)">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Pipeline CRM</span>
+    </button>
+    <button class="nav-item" onclick="goTo('pedidos', this)">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <span>Pedidos</span>
+    </button>
+
+    <div class="nav-section-label">Financeiro</div>
+    <button class="nav-item" onclick="goTo('financeiro', this)">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Lançamentos</span>
+    </button>
+
+    <div class="nav-section-label">RH & Pessoas</div>
+    <button class="nav-item" onclick="goTo('rh', this)">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Funcionários</span>
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar">AD</div>
+      <div>
+        <div class="user-name">Admin AWQ</div>
+        <div class="user-role">Administrador</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div id="main">
+  <header id="topbar">
+    <div class="topbar-title" id="page-title">Dashboard</div>
+    <div class="topbar-right">
+      <span style="font-size:13px;color:var(--text-muted)" id="current-date"></span>
+    </div>
+  </header>
+
+  <div id="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="loading">Carregando...</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Últimos Lançamentos</div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Descrição</th><th>Tipo</th><th>Valor</th><th>Status</th></tr></thead>
+            <tbody id="dash-lancamentos"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div class="page" id="page-clientes">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Clientes</div>
+          <button class="btn btn-primary" onclick="openModal('modal-cliente')">+ Novo Cliente</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Empresa</th><th>Email</th><th>Telefone</th><th>Status</th><th></th></tr></thead>
+            <tbody id="table-clientes"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPORTUNIDADES (PIPELINE) -->
+    <div class="page" id="page-oportunidades">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Pipeline CRM</div>
+          <button class="btn btn-primary" onclick="openModal('modal-oportunidade')">+ Nova Oportunidade</button>
+        </div>
+        <div class="pipeline" id="pipeline-board"></div>
+      </div>
+    </div>
+
+    <!-- PEDIDOS -->
+    <div class="page" id="page-pedidos">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Pedidos</div>
+          <button class="btn btn-primary" onclick="openModal('modal-pedido')">+ Novo Pedido</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Cliente</th><th>Descrição</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+            <tbody id="table-pedidos"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- FINANCEIRO -->
+    <div class="page" id="page-financeiro">
+      <div class="kpi-grid" id="fin-kpis"></div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Lançamentos</div>
+          <button class="btn btn-primary" onclick="openModal('modal-lancamento')">+ Novo Lançamento</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Descrição</th><th>Tipo</th><th>Categoria</th><th>Valor</th><th>Vencimento</th><th>Status</th><th></th></tr></thead>
+            <tbody id="table-lancamentos"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RH -->
+    <div class="page" id="page-rh">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Funcionários</div>
+          <button class="btn btn-primary" onclick="openModal('modal-funcionario')">+ Novo Funcionário</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Cargo</th><th>Departamento</th><th>Email</th><th>Salário</th><th>Status</th><th></th></tr></thead>
+            <tbody id="table-funcionarios"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- #content -->
+</div><!-- #main -->
+
+<!-- MODALS -->
+
+<!-- Modal Cliente -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-title">Novo Cliente</div>
+    <form id="form-cliente">
+      <div class="form-group"><label class="form-label">Nome *</label><input class="form-control" name="nome" required></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Email</label><input class="form-control" name="email" type="email"></div>
+        <div class="form-group"><label class="form-label">Telefone</label><input class="form-control" name="telefone"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Empresa</label><input class="form-control" name="empresa"></div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-control" name="status">
+            <option value="ativo">Ativo</option>
+            <option value="lead">Lead</option>
+            <option value="inativo">Inativo</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-cliente')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Oportunidade -->
+<div class="modal-overlay" id="modal-oportunidade">
+  <div class="modal">
+    <div class="modal-title">Nova Oportunidade</div>
+    <form id="form-oportunidade">
+      <div class="form-group"><label class="form-label">Título *</label><input class="form-control" name="titulo" required></div>
+      <div class="form-group"><label class="form-label">Cliente</label>
+        <select class="form-control" name="cliente_id" id="sel-cliente-op"></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-control" name="valor" type="number" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Probabilidade (%)</label><input class="form-control" name="probabilidade" type="number" min="0" max="100"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Estágio</label>
+        <select class="form-control" name="estagio">
+          <option value="prospeccao">Prospecção</option>
+          <option value="proposta">Proposta</option>
+          <option value="negociacao">Negociação</option>
+          <option value="fechamento">Fechamento</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-oportunidade')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Pedido -->
+<div class="modal-overlay" id="modal-pedido">
+  <div class="modal">
+    <div class="modal-title">Novo Pedido</div>
+    <form id="form-pedido">
+      <div class="form-group"><label class="form-label">Cliente</label>
+        <select class="form-control" name="cliente_id" id="sel-cliente-ped"></select>
+      </div>
+      <div class="form-group"><label class="form-label">Descrição *</label><input class="form-control" name="descricao" required></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-control" name="valor" type="number" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-control" name="status">
+            <option value="pendente">Pendente</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="concluido">Concluído</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-pedido')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Lançamento -->
+<div class="modal-overlay" id="modal-lancamento">
+  <div class="modal">
+    <div class="modal-title">Novo Lançamento</div>
+    <form id="form-lancamento">
+      <div class="form-group"><label class="form-label">Descrição *</label><input class="form-control" name="descricao" required></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Tipo</label>
+          <select class="form-control" name="tipo">
+            <option value="receita">Receita</option>
+            <option value="despesa">Despesa</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Valor (R$)</label><input class="form-control" name="valor" type="number" step="0.01"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Categoria</label><input class="form-control" name="categoria"></div>
+        <div class="form-group"><label class="form-label">Vencimento</label><input class="form-control" name="vencimento" type="date"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Status</label>
+        <select class="form-control" name="status">
+          <option value="pendente">Pendente</option>
+          <option value="pago">Pago</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-lancamento')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Funcionário -->
+<div class="modal-overlay" id="modal-funcionario">
+  <div class="modal">
+    <div class="modal-title">Novo Funcionário</div>
+    <form id="form-funcionario">
+      <div class="form-group"><label class="form-label">Nome *</label><input class="form-control" name="nome" required></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Cargo</label><input class="form-control" name="cargo"></div>
+        <div class="form-group"><label class="form-label">Departamento</label><input class="form-control" name="departamento"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Email</label><input class="form-control" name="email" type="email"></div>
+        <div class="form-group"><label class="form-label">Salário (R$)</label><input class="form-control" name="salario" type="number" step="0.01"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Admissão</label><input class="form-control" name="admissao" type="date"></div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-control" name="status">
+            <option value="ativo">Ativo</option>
+            <option value="ferias">Férias</option>
+            <option value="afastado">Afastado</option>
+            <option value="desligado">Desligado</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-funcionario')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ── Utilities ──────────────────────────────────────────────────────────────
+const fmt = (v) => 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtDate = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
+
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+async function api(path, opts={}) {
+  const r = await fetch('/api' + path, {
+    headers: {'Content-Type':'application/json'},
+    ...opts,
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+// ── Date ───────────────────────────────────────────────────────────────────
+document.getElementById('current-date').textContent =
+  new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+const titles = {dashboard:'Dashboard', clientes:'Clientes', oportunidades:'Pipeline CRM',
+                pedidos:'Pedidos', financeiro:'Financeiro', rh:'Funcionários'};
+
+function goTo(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  document.getElementById('page-title').textContent = titles[name] || name;
+  loadPage(name);
+}
+
+function loadPage(name) {
+  if(name==='dashboard') loadDashboard();
+  else if(name==='clientes') loadClientes();
+  else if(name==='oportunidades') loadOportunidades();
+  else if(name==='pedidos') loadPedidos();
+  else if(name==='financeiro') loadFinanceiro();
+  else if(name==='rh') loadRH();
+}
+
+// ── Modals ──────────────────────────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if(id==='modal-oportunidade' || id==='modal-pedido') populateClienteSelects();
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); });
+});
+
+async function populateClienteSelects() {
+  const clientes = await api('/clientes');
+  ['sel-cliente-op','sel-cliente-ped'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    if(sel) sel.innerHTML = clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  });
+}
+
+// ── Badge helpers ──────────────────────────────────────────────────────────
+function statusBadge(s) {
+  const map = {ativo:'success', lead:'primary', inativo:'gray', pendente:'warning',
+               aprovado:'primary', concluido:'success', cancelado:'danger',
+               pago:'success', ferias:'warning', afastado:'warning', desligado:'danger',
+               prospeccao:'gray', proposta:'primary', negociacao:'warning', fechamento:'success'};
+  return `<span class="badge badge-${map[s]||'gray'}">${s}</span>`;
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const data = await api('/dashboard');
+  const k = data.kpis;
+  const grid = document.getElementById('kpi-grid');
+  grid.innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#dbeafe"><svg width="20" height="20" fill="none" stroke="#2563eb" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+      <div class="kpi-label">Clientes Ativos</div>
+      <div class="kpi-value">${k.clientes_ativos}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#f0fdf4"><svg width="20" height="20" fill="none" stroke="#22c55e" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div class="kpi-label">Pipeline Total</div>
+      <div class="kpi-value">${fmt(k.pipeline)}</div>
+      <div class="kpi-sub">${k.oportunidades} oportunidades</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#f0fdf4"><svg width="20" height="20" fill="none" stroke="#22c55e" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <div class="kpi-label">Receitas Pagas</div>
+      <div class="kpi-value saldo-positive">${fmt(k.receita_paga)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#fef2f2"><svg width="20" height="20" fill="none" stroke="#ef4444" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <div class="kpi-label">Despesas Pagas</div>
+      <div class="kpi-value saldo-negative">${fmt(k.despesa_paga)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:${k.saldo>=0?'#f0fdf4':'#fef2f2'}"><svg width="20" height="20" fill="none" stroke="${k.saldo>=0?'#22c55e':'#ef4444'}" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+      <div class="kpi-label">Saldo</div>
+      <div class="kpi-value ${k.saldo>=0?'saldo-positive':'saldo-negative'}">${fmt(k.saldo)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#fdf4ff"><svg width="20" height="20" fill="none" stroke="#a855f7" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+      <div class="kpi-label">Funcionários</div>
+      <div class="kpi-value">${k.funcionarios}</div>
+      <div class="kpi-sub">ativos</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon" style="background:#fff7ed"><svg width="20" height="20" fill="none" stroke="#f97316" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg></div>
+      <div class="kpi-label">Pedidos</div>
+      <div class="kpi-value">${k.pedidos}</div>
+    </div>
+  `;
+
+  const tbody = document.getElementById('dash-lancamentos');
+  tbody.innerHTML = data.ultimos_lancamentos.map(l => `
+    <tr>
+      <td>${l.descricao}</td>
+      <td>${statusBadge(l.tipo)}</td>
+      <td style="font-weight:600;color:${l.tipo==='receita'?'var(--success)':'var(--danger)'}">${fmt(l.valor)}</td>
+      <td>${statusBadge(l.status)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="4" class="empty">Nenhum lançamento</td></tr>';
+}
+
+// ── Clientes ───────────────────────────────────────────────────────────────
+async function loadClientes() {
+  const rows = await api('/clientes');
+  const tbody = document.getElementById('table-clientes');
+  tbody.innerHTML = rows.map(c => `
+    <tr>
+      <td><strong>${c.nome}</strong></td>
+      <td>${c.empresa||'-'}</td>
+      <td>${c.email||'-'}</td>
+      <td>${c.telefone||'-'}</td>
+      <td>${statusBadge(c.status)}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteCliente(${c.id})">Remover</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" class="empty">Nenhum cliente</td></tr>';
+}
+
+document.getElementById('form-cliente').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  await api('/clientes', {method:'POST', body:JSON.stringify(body)});
+  closeModal('modal-cliente'); e.target.reset();
+  toast('Cliente criado!'); loadClientes();
+};
+
+async function deleteCliente(id) {
+  if(!confirm('Remover cliente?')) return;
+  await api('/clientes/'+id, {method:'DELETE'});
+  toast('Cliente removido.'); loadClientes();
+}
+
+// ── Oportunidades ──────────────────────────────────────────────────────────
+const estagioLabel = {prospeccao:'Prospecção', proposta:'Proposta', negociacao:'Negociação', fechamento:'Fechamento'};
+const estagios = ['prospeccao','proposta','negociacao','fechamento'];
+
+async function loadOportunidades() {
+  const rows = await api('/oportunidades');
+  const board = document.getElementById('pipeline-board');
+  board.innerHTML = estagios.map(est => {
+    const cards = rows.filter(r => r.estagio === est);
+    return `
+      <div class="pipeline-col">
+        <div class="pipeline-header">${estagioLabel[est]} <span style="color:var(--text)">(${cards.length})</span></div>
+        ${cards.map(c => `
+          <div class="pipeline-card">
+            <div class="pipeline-card-title">${c.titulo}</div>
+            <div class="pipeline-card-sub">${c.cliente_nome||'-'}</div>
+            <div class="pipeline-card-value">${fmt(c.valor)}</div>
+            <div class="progress"><div class="progress-bar" style="width:${c.probabilidade}%"></div></div>
+            <div style="display:flex;justify-content:space-between;margin-top:6px">
+              <span style="font-size:11px;color:var(--text-muted)">${c.probabilidade}% prob.</span>
+              <button class="btn btn-sm btn-danger" onclick="deleteOportunidade(${c.id})">×</button>
+            </div>
+          </div>
+        `).join('')}
+        ${cards.length===0?'<div style="font-size:12px;color:var(--text-muted);padding:8px">Nenhuma oportunidade</div>':''}
+      </div>
+    `;
+  }).join('');
+}
+
+document.getElementById('form-oportunidade').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  body.valor = parseFloat(body.valor)||0;
+  body.probabilidade = parseInt(body.probabilidade)||0;
+  body.cliente_id = parseInt(body.cliente_id);
+  await api('/oportunidades', {method:'POST', body:JSON.stringify(body)});
+  closeModal('modal-oportunidade'); e.target.reset();
+  toast('Oportunidade criada!'); loadOportunidades();
+};
+
+async function deleteOportunidade(id) {
+  await api('/oportunidades/'+id, {method:'DELETE'});
+  toast('Removida.'); loadOportunidades();
+}
+
+// ── Pedidos ────────────────────────────────────────────────────────────────
+async function loadPedidos() {
+  const rows = await api('/pedidos');
+  const tbody = document.getElementById('table-pedidos');
+  tbody.innerHTML = rows.map(p => `
+    <tr>
+      <td>${p.cliente_nome||'-'}</td>
+      <td>${p.descricao}</td>
+      <td style="font-weight:600">${fmt(p.valor)}</td>
+      <td>${statusBadge(p.status)}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deletePedido(${p.id})">Remover</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" class="empty">Nenhum pedido</td></tr>';
+}
+
+document.getElementById('form-pedido').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  body.valor = parseFloat(body.valor)||0;
+  body.cliente_id = parseInt(body.cliente_id);
+  await api('/pedidos', {method:'POST', body:JSON.stringify(body)});
+  closeModal('modal-pedido'); e.target.reset();
+  toast('Pedido criado!'); loadPedidos();
+};
+
+async function deletePedido(id) {
+  if(!confirm('Remover pedido?')) return;
+  await api('/pedidos/'+id, {method:'DELETE'});
+  toast('Pedido removido.'); loadPedidos();
+}
+
+// ── Financeiro ─────────────────────────────────────────────────────────────
+async function loadFinanceiro() {
+  const rows = await api('/lancamentos');
+  const receitas = rows.filter(r=>r.tipo==='receita').reduce((s,r)=>s+r.valor,0);
+  const despesas = rows.filter(r=>r.tipo==='despesa').reduce((s,r)=>s+r.valor,0);
+  const recPago = rows.filter(r=>r.tipo==='receita'&&r.status==='pago').reduce((s,r)=>s+r.valor,0);
+  const despPago = rows.filter(r=>r.tipo==='despesa'&&r.status==='pago').reduce((s,r)=>s+r.valor,0);
+
+  document.getElementById('fin-kpis').innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Total Receitas</div><div class="kpi-value saldo-positive">${fmt(receitas)}</div><div class="kpi-sub">${fmt(recPago)} pago</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Despesas</div><div class="kpi-value saldo-negative">${fmt(despesas)}</div><div class="kpi-sub">${fmt(despPago)} pago</div></div>
+    <div class="kpi-card"><div class="kpi-label">Saldo Projetado</div><div class="kpi-value ${(receitas-despesas)>=0?'saldo-positive':'saldo-negative'}">${fmt(receitas-despesas)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Saldo Realizado</div><div class="kpi-value ${(recPago-despPago)>=0?'saldo-positive':'saldo-negative'}">${fmt(recPago-despPago)}</div></div>
+  `;
+
+  const tbody = document.getElementById('table-lancamentos');
+  tbody.innerHTML = rows.map(l => `
+    <tr>
+      <td>${l.descricao}</td>
+      <td>${statusBadge(l.tipo)}</td>
+      <td>${l.categoria||'-'}</td>
+      <td style="font-weight:600;color:${l.tipo==='receita'?'var(--success)':'var(--danger)'}">${fmt(l.valor)}</td>
+      <td>${fmtDate(l.vencimento)}</td>
+      <td>${statusBadge(l.status)}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteLancamento(${l.id})">Remover</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" class="empty">Nenhum lançamento</td></tr>';
+}
+
+document.getElementById('form-lancamento').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  body.valor = parseFloat(body.valor)||0;
+  await api('/lancamentos', {method:'POST', body:JSON.stringify(body)});
+  closeModal('modal-lancamento'); e.target.reset();
+  toast('Lançamento criado!'); loadFinanceiro();
+};
+
+async function deleteLancamento(id) {
+  if(!confirm('Remover lançamento?')) return;
+  await api('/lancamentos/'+id, {method:'DELETE'});
+  toast('Lançamento removido.'); loadFinanceiro();
+}
+
+// ── RH ─────────────────────────────────────────────────────────────────────
+async function loadRH() {
+  const rows = await api('/funcionarios');
+  const tbody = document.getElementById('table-funcionarios');
+  tbody.innerHTML = rows.map(f => `
+    <tr>
+      <td><strong>${f.nome}</strong></td>
+      <td>${f.cargo||'-'}</td>
+      <td>${f.departamento||'-'}</td>
+      <td>${f.email||'-'}</td>
+      <td style="font-weight:600">${fmt(f.salario)}</td>
+      <td>${statusBadge(f.status)}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteFuncionario(${f.id})">Remover</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" class="empty">Nenhum funcionário</td></tr>';
+}
+
+document.getElementById('form-funcionario').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  body.salario = parseFloat(body.salario)||0;
+  await api('/funcionarios', {method:'POST', body:JSON.stringify(body)});
+  closeModal('modal-funcionario'); e.target.reset();
+  toast('Funcionário criado!'); loadRH();
+};
+
+async function deleteFuncionario(id) {
+  if(!confirm('Remover funcionário?')) return;
+  await api('/funcionarios/'+id, {method:'DELETE'});
+  toast('Removido.'); loadRH();
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadDashboard();
+</script>
+</body>
+</html>
